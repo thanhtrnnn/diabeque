@@ -1,0 +1,21 @@
+.env
+.venv/
+.demo-logs/
+__pycache__/
+.pytest_cache/
+.DS_Store
+node_modules/
+.next/
+*.tsbuildinfo
+.env.local
+# Dữ liệu lớn, dựng lại bằng lệnh trong DEPLOY.md
+chap5-rag/data/raw/
+chap5-rag/data/brfss/
+chap5-rag/data/survey.db
+chap6-agents/data/
+# Sản phẩm phụ của tectonic
+*.aux
+*.log
+!chap6-agents/results/*.log
+*.out
+*.toc

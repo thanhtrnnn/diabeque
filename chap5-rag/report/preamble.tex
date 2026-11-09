@@ -1,0 +1,151 @@
+% ---------------------------------------------------------------
+% Preamble — biên dịch bằng XeLaTeX (tectonic)
+% ---------------------------------------------------------------
+\usepackage{fontspec}
+\usepackage{unicode-math}
+
+% Font chính: CM Unicode (phủ đủ dấu tiếng Việt). Nếu không có, đổi sang
+% \setmainfont{Times New Roman} hoặc \setmainfont{Arial Unicode}.
+\IfFontExistsTF{cmunrm.otf}{%
+  \setmainfont{cmun}[
+    Extension      = .otf,
+    UprightFont    = *rm,
+    BoldFont       = *bx,
+    ItalicFont     = *ti,
+    BoldItalicFont = *bi,
+    Ligatures      = TeX ]
+  \setmonofont{cmun}[
+    Extension      = .otf,
+    UprightFont    = *tt,
+    BoldFont       = *tb,
+    ItalicFont     = *it,
+    Scale          = 0.92 ]
+}{%
+  \setmainfont{Times New Roman}[Ligatures=TeX]
+  \setmonofont{Menlo}[Scale=0.85]
+}
+
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2.6cm,right=2.6cm]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{fancyvrb}
+\usepackage{fvextra}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+
+% --------------------------- màu sắc ---------------------------
+\definecolor{accent}{HTML}{1F4E79}
+\definecolor{softbg}{HTML}{F3F6FA}
+\definecolor{softbd}{HTML}{9DB8D4}
+\definecolor{warmbg}{HTML}{FDF2E3}
+\definecolor{warmbd}{HTML}{E0A458}
+\definecolor{coolbg}{HTML}{EAF5EF}
+\definecolor{coolbd}{HTML}{5CA184}
+\definecolor{rulegray}{HTML}{BBBBBB}
+\definecolor{codebg}{HTML}{F7F7F7}
+
+% --------------------------- tiêu đề ---------------------------
+\titleformat{\section}{\Large\bfseries\color{accent}}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.7em}
+\titlespacing*{\subsection}{0pt}{1.1em}{0.5em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% --------------------------- bảng ------------------------------
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.18}
+\captionsetup[table]{font=small,labelfont=bf,skip=4pt}
+\captionsetup[figure]{font=small,labelfont=bf,skip=4pt}
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\contentsname}{Mục lục}
+
+% --------------------------- hộp nhấn mạnh ---------------------
+\newtcolorbox{softbox}[1][]{
+  colback=softbg, colframe=softbd, boxrule=0.6pt, arc=2pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt, #1}
+\newtcolorbox{warmbox}[1][]{
+  colback=warmbg, colframe=warmbd, boxrule=0.6pt, arc=2pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt, #1}
+\newtcolorbox{coolbox}[1][]{
+  colback=coolbg, colframe=coolbd, boxrule=0.6pt, arc=2pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt, #1}
+\newtcolorbox{plainbox}[1][]{
+  colback=white, colframe=black, boxrule=0.5pt, arc=1pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt, #1}
+
+% --------------------------- code ------------------------------
+\lstdefinestyle{plain}{
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{rulegray},
+  framesep=4pt,
+  xleftmargin=6pt,
+  xrightmargin=2pt,
+  numbers=none,
+  upquote=true,
+  extendedchars=true,
+  % Không dùng `literate`: XeTeX xử lý UTF-8 trực tiếp, cmuntt phủ đủ dấu tiếng Việt.
+}
+\lstset{style=plain}
+
+% listings không xử lý đúng ký tự UTF-8 3 byte (ộ, ữ, ệ...). Mọi tệp mã nguồn
+% có tiếng Việt được nạp bằng fvextra/fancyvrb — XeTeX đọc UTF-8 trực tiếp.
+\newcommand{\srcfile}[2][]{%
+  \VerbatimInput[fontsize=\scriptsize, frame=single, framesep=4pt,
+    rulecolor=\color{rulegray}, breaklines, breakanywhere,
+    breaksymbolleft={}, breaksymbolright={}, #1]{#2}}
+
+% --------------------------- tiện ích --------------------------
+\newcommand{\kpi}[2]{%
+  \begin{minipage}[t]{0.24\linewidth}\centering
+    {\large\bfseries #1}\\[2pt]{\footnotesize #2}
+  \end{minipage}}
+\newcommand{\req}{\textsuperscript{\textcolor{accent}{\scriptsize[BẮT BUỘC]}}}
+\setlist[itemize]{leftmargin=1.4em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.7em,itemsep=2pt,topsep=3pt}
+
+% --------------------------- bổ sung cho A4–A5 --------------------
+\usepackage{multirow}
+\usepackage{pdflscape}
+\newcommand{\code}[1]{\texttt{\small #1}}
+% Bảng dài dùng chung một kiểu chữ nhỏ
+\newcommand{\smalltable}{\small}
+
+% --------------------------- bổ sung cho A7 --------------------
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,backgrounds}
+\tikzset{
+  op/.style={draw, rounded corners=2pt, minimum height=5.5mm, minimum width=9mm,
+             font=\scriptsize\ttfamily, fill=white},
+  var/.style={font=\small, inner sep=1pt},
+  flow/.style={-{Stealth[length=4pt]}, semithick},
+}
+\definecolor{rnncol}{HTML}{C8553D}
+\definecolor{lstmcol}{HTML}{2E6F95}

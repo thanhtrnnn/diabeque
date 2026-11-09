@@ -1,0 +1,5 @@
+{
+  "relevance_labels": {"method": "đọc 15 nhãn dương ngẫu nhiên (seed 7) của bộ chấm có kiểm quote", "sampled": 15, "agree": 12},
+  "relevance_labels_lenient": {"method": "đọc 25 nhãn dương của bộ chấm không kiểm quote (seed 1), chỉ 330 ký tự đầu", "sampled": 25, "agree_low": 15, "agree_high": 17},
+  "claims": {"method": "đọc 5 phát biểu ngẫu nhiên (seed 3) và tra lại nguồn", "sampled": 5, "agree": 5}
+}

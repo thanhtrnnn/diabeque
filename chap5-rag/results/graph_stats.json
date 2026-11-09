@@ -1,0 +1,38 @@
+{
+  "nodes": {
+    "Chunk": 424,
+    "Complication": 257,
+    "Disease": 5,
+    "Document": 35,
+    "DrugClass": 191,
+    "Recommendation": 840,
+    "RiskFactor": 276,
+    "SurveyRecord": 600,
+    "SurveyStatus": 3,
+    "Symptom": 219
+  },
+  "relationships": {
+    "HAS_COMPLICATION": 277,
+    "HAS_DRUG_CLASS": 208,
+    "HAS_RECOMMENDATION": 868,
+    "HAS_REPORTED_STATUS": 600,
+    "HAS_RISK_FACTOR": 299,
+    "HAS_SYMPTOM": 240,
+    "PART_OF": 424,
+    "SUPPORTED_BY": 2122
+  },
+  "facts_with_sources": 1783,
+  "facts_supported_in_both_languages": 52,
+  "extraction": {
+    "chunks": 424,
+    "llm_errors": 0,
+    "proposed": 2201,
+    "accepted": 2130,
+    "rejected": {
+      "quote_not_in_chunk": 60,
+      "unknown_disease": 3,
+      "unknown_kind": 8
+    },
+    "tokens": 524076
+  }
+}

@@ -1,0 +1,112 @@
+# One rule per line, matched case-insensitively with re.search against each cleaned line (a whole paragraph for PDFs).
+# A matching line is dropped. A "cut:" rule drops the matching line and everything after it.
+# Anchor with ^ and $ so real sentences survive.
+
+# Calls to action, contact details, links
+đặt (lịch|hẹn)
+\bhotline\b
+\bhelpline\b
+đường dây nóng
+\b1900\s?\d{3,4}
+đăng ký (nhận tin|khám|tư vấn|ngay|tại đây)
+liên hệ (ngay|với chúng tôi|để được)
+quý khách
+fanpage
+^- (website|email):
+https?://|\bwww\.
+^learn more at diabetes\.org
+
+# Brands and promotional copy
+\btâm anh\b
+\bvinmec\b
+\bmedlatec\b
+\blong châu\b
+bệnh viện (trung ương quân đội|tưqđ|twqđ) ?108
+thông tin và sản phẩm gợi ý
+^trong bối cảnh điều trị ngày càng cá thể hóa
+^nếu bạn quan tâm đến các lựa chọn điều trị mới
+^bài viết (được )?tư vấn chuyên môn
+^tư vấn chuyên môn bài viết
+^bài viết tham khảo nguồn
+\bhơn \d+ năm kinh nghiệm
+^bác sĩ đã tham gia
+^(tốt nghiệp|từng (đảm nhiệm|công tác|giữ|làm việc))\b
+
+# Vietnamese navigation, sharing, related links
+^(lớn hơn|nhỏ hơn)$
+^(trang chủ|giới thiệu|liên hệ|tìm kiếm|đăng nhập|menu|quảng cáo)$
+\bquảng cáo\b.*:|mua ngay|khuyến mãi|giảm giá \d+
+^(chia sẻ|tin tức|bình luận|lựa chọn dịch vụ|nội dung chính|kích thước chữ|mặc định|nguồn tham khảo|bài viết cùng chủ đề|bài viết liên quan|tin liên quan|đăng ký nhận tin|hệ thống bệnh viện đa khoa)\b[^.]{0,20}$
+^(xem thêm|đọc thêm|tìm hiểu thêm)( thông tin)?\s*:
+cut: ^xem thêm:?$
+^>>
+^cập nhật (lần cuối|ngày)
+^\d[\d.,]*\s+lượt xem$
+^(đã )?kiểm duyệt( nội dung)?$
+^nội dung được kiểm duyệt
+^bác sĩ duyệt bài
+^kỳ [ivx]+\s*:
+báo sức khỏe & đời sống
+^-?\s*\d{2}/\d{2}/\d{4}\s*\|
+^- (tìm hiểu chung|triệu chứng|nguyên nhân|nguy cơ|phương pháp chẩn đoán( & điều trị)?|chế độ sinh hoạt & phòng ngừa)$
+^- \(đ/c cũ
+^- .*(tp\.hcm|tp\. hà nội)$
+^- (bệnh viện|phòng khám) đa khoa
+
+# Citations, bylines and contributor lists
+^-?\s*[^\s,]+, [a-z]\.,?\s
+\(\d{4}(, [a-z]+ \d{1,2})?\)\.
+^(gs|pgs|ts|ths|bs|bsnt|bscki+|cn|ds)(\.(ts|bs|cki+))*\.?\s+[^–-]{3,60}\s[–-]\s
+^(tham gia biên soạn|tổ thư ký|chỉ đạo biên soạn|chủ biên|đồng chủ biên|ban biên soạn)\b
+^khoa [^.]{0,60} - bệnh viện
+
+# Vietnamese guideline PDFs: decision preamble, tables of contents, numbered literature references
+^bộ y tế\b.{0,80}(cộng ho[àả] xã hội|\bsố:)
+^(căn cứ|theo đề nghị của)\b
+^điều [1-4]\.\s
+^nơi nhận
+^- (như điều 4|(quyền )?bộ trưởng \(để|các thứ trưởng|cổng thông tin điện tử|lưu:)
+^kt\. bộ trưởng
+\(ban hành kèm theo quyết định
+\.{4,}|-{5,}|[a-zà-ỹ]{2}\d{2,3}$|\)\d{2,3}$
+cut: tài liệu tham khảo$
+
+# English page furniture
+^(on this page|in this section|view or print all sections|basics|research|learn more|see, play and learn|resources|for you|find out more|read more|print|share)\s*:?$
+^read more about\b
+\bour email support\b
+^learn more about\b.{0,100}\.$
+^page (last )?(reviewed|updated)
+^next review due
+^last (reviewed|updated|modified)
+^\d{1,2} (january|february|march|april|may|june|july|august|september|october|november|december) \d{4}$
+all rights reserved
+\bcookie (policy|notice|settings|consent)|we use cookies|accept (all )?cookies
+privacy policy
+terms (of use|and conditions)
+subscribe|newsletter
+^- (diabetes uk|better health)\b
+^\|\s*(notes|sources)\s*:
+^\|\s*\|\s*[†‡*]
+^(\|[^|]*){8,}
+cut: ^(references?|related information|related resource)$
+cut: ^this content is provided as a service of the national institute
+cut: ^nih: national institute of diabetes and digestive and kidney diseases$
+
+# English PDFs: licence and front matter, form fields, document codes
+some rights reserved
+^(under the terms of this licence|any mediation relating|suggested citation|cataloguing-in-publication|sales, rights and licensing|third-party materials|general disclaimers|the mention of specific companies|all reasonable precautions|design and layout by|photo credits|cover: ©)
+^(name|name of doctor/nurse|to be achieved when)\b.{0,10}:
+^the two steps that i will take
+^agreed action plan
+^reviewers included
+(\b(university|hospital|institute|centre|center)\b.*){3}
+^watch a video of niddk director
+^what clinical (trials|studies) for\b.*participants\?$
+^you can view a filtered list of clinical studies
+^clinicaltrials\.gov\. you can expand
+^clinical trials—and other types
+^niddk conducts and supports clinical trials
+^find out if clinical trials are right for you
+^who expresses special appreciation
+[(（]view[)）]

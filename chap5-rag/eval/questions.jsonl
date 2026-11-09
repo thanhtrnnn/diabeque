@@ -1,0 +1,30 @@
+{"qid": "q01", "group": "khai_niem", "in_scope": true, "lang": "vi", "question": "Đái tháo đường là gì?"}
+{"qid": "q02", "group": "khai_niem", "in_scope": true, "lang": "vi", "question": "Đái tháo đường type 1 khác type 2 như thế nào?"}
+{"qid": "q03", "group": "khai_niem", "in_scope": true, "lang": "vi", "question": "Tiền đái tháo đường là gì và có hồi phục được không?"}
+{"qid": "q04", "group": "khai_niem", "in_scope": true, "lang": "vi", "question": "Đái tháo đường thai kỳ là gì?"}
+{"qid": "q05", "group": "trieu_chung", "in_scope": true, "lang": "vi", "question": "Những triệu chứng sớm của đái tháo đường là gì?"}
+{"qid": "q06", "group": "trieu_chung", "in_scope": true, "lang": "vi", "question": "Dấu hiệu của hạ đường huyết là gì?"}
+{"qid": "q07", "group": "trieu_chung", "in_scope": true, "lang": "vi", "question": "Trẻ em mắc đái tháo đường type 1 thường có biểu hiện gì?"}
+{"qid": "q08", "group": "nguy_co", "in_scope": true, "lang": "vi", "question": "Ai có nguy cơ cao mắc đái tháo đường type 2?"}
+{"qid": "q09", "group": "nguy_co", "in_scope": true, "lang": "vi", "question": "Thừa cân béo phì ảnh hưởng thế nào đến nguy cơ đái tháo đường?"}
+{"qid": "q10", "group": "chan_doan", "in_scope": true, "lang": "vi", "question": "Chẩn đoán đái tháo đường dựa vào những xét nghiệm nào?"}
+{"qid": "q11", "group": "chan_doan", "in_scope": true, "lang": "vi", "question": "Chỉ số HbA1c bao nhiêu thì được coi là tiền đái tháo đường?"}
+{"qid": "q12", "group": "an_uong", "in_scope": true, "lang": "vi", "question": "Người bệnh đái tháo đường type 2 nên ăn gì và hạn chế gì?"}
+{"qid": "q13", "group": "an_uong", "in_scope": true, "lang": "vi", "question": "Người bị tiền đái tháo đường nên ăn uống thế nào?"}
+{"qid": "q14", "group": "an_uong", "in_scope": true, "lang": "vi", "question": "Người đái tháo đường có được uống rượu bia không?"}
+{"qid": "q15", "group": "van_dong", "in_scope": true, "lang": "vi", "question": "Người bệnh đái tháo đường nên tập thể dục bao nhiêu phút mỗi tuần?"}
+{"qid": "q16", "group": "thuoc", "in_scope": true, "lang": "vi", "question": "Metformin được dùng trong điều trị đái tháo đường như thế nào?"}
+{"qid": "q17", "group": "thuoc", "in_scope": true, "lang": "vi", "question": "Khi nào người bệnh đái tháo đường type 2 cần dùng insulin?"}
+{"qid": "q18", "group": "thuoc", "in_scope": true, "lang": "vi", "question": "Thuốc ức chế SGLT2 có tác dụng gì?"}
+{"qid": "q19", "group": "bien_chung", "in_scope": true, "lang": "vi", "question": "Đái tháo đường gây ra những biến chứng nào?"}
+{"qid": "q20", "group": "bien_chung", "in_scope": true, "lang": "vi", "question": "Làm sao để phòng ngừa biến chứng bàn chân ở người đái tháo đường?"}
+{"qid": "q21", "group": "tong_hop", "in_scope": true, "lang": "vi", "question": "Làm thế nào để phòng ngừa đái tháo đường type 2 ở người có tiền đái tháo đường?"}
+{"qid": "q22", "group": "tong_hop", "in_scope": true, "lang": "vi", "question": "Người bệnh đái tháo đường nên tự theo dõi đường huyết ra sao?"}
+{"qid": "q23", "group": "en", "in_scope": true, "lang": "en", "question": "What are the symptoms of type 1 diabetes?"}
+{"qid": "q24", "group": "en", "in_scope": true, "lang": "en", "question": "How much weight loss helps prevent type 2 diabetes in people with prediabetes?"}
+{"qid": "q25", "group": "en", "in_scope": true, "lang": "en", "question": "What is gestational diabetes and who is at risk?"}
+{"qid": "q26", "group": "en", "in_scope": true, "lang": "en", "question": "What foods should people with diabetes limit?"}
+{"qid": "q27", "group": "ngoai_pham_vi", "in_scope": false, "lang": "vi", "question": "Giá vàng hôm nay bao nhiêu?"}
+{"qid": "q28", "group": "ngoai_pham_vi", "in_scope": false, "lang": "vi", "question": "Cách nấu phở bò ngon tại nhà?"}
+{"qid": "q29", "group": "ngoai_pham_vi", "in_scope": false, "lang": "vi", "question": "Ung thư tuyến tụy được điều trị bằng hóa trị như thế nào?"}
+{"qid": "q30", "group": "ngoai_pham_vi", "in_scope": false, "lang": "vi", "question": "Uống thuốc gì để hết cảm cúm nhanh?"}

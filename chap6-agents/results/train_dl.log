@@ -1,0 +1,21 @@
+[status3] seed 0 mlp    val F1 0.4259  test acc 0.6381 F1 0.4232  epochs 13  11s
+[status3] seed 0 cnn1d  val F1 0.4347  test acc 0.6612 F1 0.4326  epochs 20  818s
+[status3] seed 0 lstm   val F1 0.4330  test acc 0.6581 F1 0.4291  epochs 23  622s
+[status3] seed 1 mlp    val F1 0.4259  test acc 0.6426 F1 0.4278  epochs 13  9s
+[status3] seed 1 cnn1d  val F1 0.4271  test acc 0.6421 F1 0.4311  epochs 22  901s
+[status3] seed 1 lstm   val F1 0.4269  test acc 0.6397 F1 0.4309  epochs 22  489s
+[status3] seed 2 mlp    val F1 0.4259  test acc 0.6400 F1 0.4270  epochs 20  16s
+[status3] seed 2 cnn1d  val F1 0.4295  test acc 0.6417 F1 0.4290  epochs 9  317s
+[status3] seed 2 lstm   val F1 0.4274  test acc 0.6385 F1 0.4279  epochs 11  262s
+[status3] chosen by val macro-F1: cnn1d
+[diabtype] seed 0 mlp    val F1 0.5454  test acc 0.7345 F1 0.5463  epochs 19  1s
+[diabtype] seed 0 cnn1d  val F1 0.5719  test acc 0.8076 F1 0.5819  epochs 13  15s
+[diabtype] seed 0 lstm   val F1 0.5867  test acc 0.8025 F1 0.5776  epochs 13  10s
+[diabtype] seed 1 mlp    val F1 0.5275  test acc 0.7142 F1 0.5352  epochs 18  0s
+[diabtype] seed 1 cnn1d  val F1 0.5374  test acc 0.7586 F1 0.5549  epochs 11  12s
+[diabtype] seed 1 lstm   val F1 0.5734  test acc 0.8668 F1 0.5885  epochs 8  6s
+[diabtype] seed 2 mlp    val F1 0.5359  test acc 0.7187 F1 0.5450  epochs 12  0s
+[diabtype] seed 2 cnn1d  val F1 0.5582  test acc 0.7721 F1 0.5699  epochs 15  17s
+[diabtype] seed 2 lstm   val F1 0.5458  test acc 0.7505 F1 0.5575  epochs 15  12s
+[diabtype] chosen by val macro-F1: lstm
+wrote /Users/quant/Desktop/Thanh Tran/projects/basic_ml/tieuluan_final/project/results/dl_compare.json in 3551s

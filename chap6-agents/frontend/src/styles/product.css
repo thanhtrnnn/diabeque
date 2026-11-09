@@ -1,0 +1,162 @@
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.product-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.product-mark > img {
+  display: block;
+  flex: none;
+  width: var(--control-height-compact);
+  height: var(--control-height-compact);
+}
+
+.product-mark strong {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+.product-mark--compact strong {
+  display: none;
+}
+
+.page-heading {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: clamp(var(--space-xl), 7vw, var(--space-3xl)) clamp(var(--space-sm), 4vw, var(--space-xl)) var(--space-xl);
+}
+
+.page-heading h1 {
+  max-width: 18ch;
+  margin-top: var(--space-2xs);
+  font-size: var(--type-step-display);
+  line-height: 0.98;
+}
+
+.page-heading > p:last-child,
+.page-heading > div > p:last-child {
+  max-width: 60ch;
+  margin-top: var(--space-sm);
+  color: var(--color-muted);
+  font-size: var(--text-lg);
+  line-height: 1.55;
+}
+
+.chat-workspace {
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+  min-height: calc(100dvh - 4.75rem);
+}
+
+.citation-sheet {
+  position: fixed;
+  z-index: var(--z-modal);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(42rem, 46vw);
+  overflow-y: auto;
+  border-left: var(--rule-hair) solid var(--color-rule-2);
+  padding: clamp(var(--space-md), 4vw, var(--space-xl));
+  color: var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+  animation: product-sheet-in var(--dur-long) var(--ease-out);
+}
+
+@keyframes product-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes product-sheet-in {
+  from { opacity: 0; transform: translateX(1rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 1080px) {
+  .chat-workspace {
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .product-mark strong {
+    font-size: var(--text-md);
+  }
+
+  .product-mark > img {
+    width: var(--space-lg);
+    height: var(--space-lg);
+  }
+
+  .page-heading {
+    padding-top: var(--space-xl);
+  }
+
+  .page-heading h1 {
+    font-size: var(--type-step-display);
+  }
+
+  .chat-workspace {
+    display: block;
+    min-height: calc(100dvh - 8.25rem);
+  }
+
+  .citation-sheet {
+    width: 100%;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 414px) {
+  .page-heading {
+    padding-right: var(--space-sm);
+    padding-left: var(--space-sm);
+  }
+}
+
+@media (max-width: 320px) {
+  .product-mark strong {
+    display: none;
+  }
+
+  .page-heading h1 {
+    font-size: var(--type-step-40);
+  }
+
+  .citation-sheet {
+    padding: var(--space-sm);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .citation-sheet {
+    animation: none;
+    transition-duration: 1ms;
+  }
+}
+
+.app-page {
+  width: 100%;
+  min-width: 0;
+  padding: var(--spacing-page-compact) var(--spacing-page-gutter) var(--spacing-page);
+  display: grid;
+  gap: var(--spacing-section);
+}

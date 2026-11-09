@@ -1,0 +1,26 @@
+:root {
+  --motion-layout: 320ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .product-main > * {
+    animation: motion-workbench-open var(--motion-layout) var(--motion-ease) backwards;
+  }
+}
+
+@keyframes motion-workbench-open {
+  from { clip-path: inset(0 0 1.25rem 0); transform: translateY(0.35rem); }
+  to { clip-path: inset(0); transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition-delay: 0ms !important;
+    transition-duration: 120ms !important;
+    transition-property: color, background-color, border-color, outline-color, box-shadow, opacity !important;
+  }
+}

@@ -1,0 +1,18 @@
+=== Đái tháo đường type 2 là gì? (6.944618000 s)
+answered 0.876 type2
+Đái tháo đường týp 2 là một bệnh rối loạn chuyển hóa carbonhydrat [1]. Bệnh có đặc điểm là tăng glucose máu do hai lý do: khiếm khuyết về tiết insulin và khiếm khuyết về tác động của insulin đến cơ thể (hay còn gọi là đề kháng insulin) [1]. Trong đó, cơ chế đầu tiên khi mới mắc bệnh là sự đề kháng insulin, nghĩa là cơ thể có đủ insulin nhưng không thể sử dụng insulin đúng cách hoặc insulin không thực hiện được chức năng đưa glucose vào bên trong tế bào để sản sinh năng lượng [1]. Do đó, cơ thể không thể tạo đủ insulin để thỏa mãn nhu cầu hoặc không thể đáp ứng bình thường với lượng insulin được sản xuất ra, dẫn đến tình trạng đường trong máu tăng lên [2].
+[('Vinmec', 'vi'), ('Sức khỏe & Đời sống (Bộ Y tế)', 'vi')]
+=== Người bị tiền đái tháo đường nên ăn uống thế nào? (5.067915000 s)
+answered 0.887 prediabetes
+Để đẩy lùi tiền đái tháo đường, người bệnh nên thực hiện chế độ ăn uống lành mạnh với các lưu ý sau:
+
+*   **Lựa chọn thực phẩm:** Ưu tiên các thực phẩm có chất béo tốt và dưỡng chất có lợi như dầu thực vật, các loại đậu, ngũ cốc nguyên hạt, cá, rau xanh và nước trà xanh [1]. Nên chọn các loại trái cây có chỉ số đường huyết thấp như sơ ri, nho, táo, bơ, bưởi, chuối, ổi [1].
+*   **Kiểm soát tinh bột:** Người bệnh nên chọn thực phẩm có chỉ số đường huyết thấp hoặc trung bình (GI≤55) [2].
+*   **Hạn chế thực phẩm không tốt:** Ngưng dùng các chất kích thích, thực phẩm chứa nhiều carbohydrate như đồ uống có cồn, nước ngọt có ga, thức ăn nhanh, các món chế biến sẵn [3]. Đồng thời, cần hạn chế sử dụng nhiều thịt đỏ, thức ăn chế biến sẵn và đồ uống có đường [4].
+*   **Phương pháp ăn uống khác:** Người thừa cân béo phì có thể áp dụng chế độ ăn Địa Trung Hải (khuyến khích cá, trái cây, rau, đậu, ngũ cốc nguyên hạt; không khuyến khích nhiều thịt, đồ ngọt hay sản phẩm từ sữa) hoặc chế độ ăn DASH (khuyến khích trái cây, rau, ngũ cốc nguyên hạt và thực phẩm từ sữa ít béo) [1].
+*   **Lưu ý khác:** Việc sắp xếp các bữa ăn vào các thời gian cố định trong ngày là cần thiết để sử dụng tốt lượng insulin [2]. Người bệnh cũng nên gặp cán bộ dinh dưỡng để lập kế hoạch ăn uống dựa trên mục tiêu sức khỏe và lối sống cá nhân [2].
+[('Bệnh viện Tâm Anh', 'vi'), ('Bệnh viện TWQĐ 108', 'vi'), ('Bệnh viện Tâm Anh', 'vi'), ('Bệnh viện Tâm Anh', 'vi')]
+=== Giá vàng hôm nay bao nhiêu? (.159632000 s)
+out_of_scope 0.718 None
+Câu hỏi nằm ngoài phạm vi tra cứu về đái tháo đường của hệ thống.
+[]

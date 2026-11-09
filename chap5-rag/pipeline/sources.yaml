@@ -1,0 +1,217 @@
+- id: byt-dtd-type2-pdf
+  url: https://benhviendakhoabaria.vn/sites/default/files/files/tin-tuc/5481_dai_thao_duong_type_2.pdf
+  publisher: Bộ Y tế
+  lang: vi
+  kind: pdf
+  topic: type2 guideline
+  title: Hướng dẫn chẩn đoán và điều trị đái tháo đường típ 2 (Quyết định 5481/QĐ-BYT)
+- id: byt-tien-dtd-pdf
+  url: https://vnras.com/wp-content/uploads/2024/05/Huong-dan-chan-doan-va-dieu-tri-tien-dai-thao-duong-theo-bo-y-te-quyet-dinh-3087-qd-byt-16-07-2020-vnras.pdf
+  publisher: Bộ Y tế
+  lang: vi
+  kind: pdf
+  topic: prediabetes guideline
+  title: Hướng dẫn chẩn đoán và điều trị tiền đái tháo đường (Quyết định 3087/QĐ-BYT)
+- id: byt-dtd-type1-pdf
+  url: https://vnras.com/wp-content/uploads/2024/07/Huong-dan-chan-doan-va-dieu-tri-benh-dai-thao-duong-tip-1-o-tre-em-va-thanh-thieu-nien-vnras.pdf
+  publisher: Bộ Y tế
+  lang: vi
+  kind: pdf
+  topic: type1 guideline
+  title: Hướng dẫn chẩn đoán và điều trị đái tháo đường típ 1 ở trẻ em và thanh thiếu niên (Quyết định 1760/QĐ-BYT)
+- id: vinmec-t2-trieu-chung
+  url: https://www.vinmec.com/vie/bai-viet/dau-hieu-som-cua-tieu-duong-type-2-vi
+  publisher: Vinmec
+  lang: vi
+  kind: html
+  topic: type2 symptoms
+- id: vinmec-t2-nhom-thuoc
+  url: https://www.vinmec.com/vie/bai-viet/cac-nhom-thuoc-dieu-tri-tieu-duong-type-2-vi
+  publisher: Vinmec
+  lang: vi
+  kind: html
+  topic: drug classes
+- id: b108-chan-doan-dieu-tri
+  url: https://benhvien108.vn/chan-doan-phong-va-dieu-tri-benh-dai-thao-duong.htm
+  publisher: Bệnh viện TWQĐ 108
+  lang: vi
+  kind: html
+  topic: diagnosis prevention treatment
+- id: b108-an-uong
+  url: https://benhvien108.vn/benh-dai-thao-duong-ke-hoach-an-uong-lanh-manh.htm
+  publisher: Bệnh viện TWQĐ 108
+  lang: vi
+  kind: html
+  topic: diet
+- id: medlatec-tieu-chuan-chan-doan
+  url: https://medlatec.vn/tin-tuc/tim-hieu-nhung-tieu-chuan-chan-doan-dai-thao-duong-s195-n33671
+  publisher: Medlatec
+  lang: vi
+  kind: html
+  topic: diagnosis criteria
+- id: tamanh-tien-dtd
+  url: https://tamanhhospital.vn/benh/tien-tieu-duong/
+  publisher: Bệnh viện Tâm Anh
+  lang: vi
+  kind: html
+  topic: prediabetes
+- id: tamanh-dtd-thai-ky
+  url: https://tamanhhospital.vn/benh/dai-thao-duong-thai-ky
+  publisher: Bệnh viện Tâm Anh
+  lang: vi
+  kind: html
+  topic: gestational
+- id: longchau-phan-biet
+  url: https://nhathuoclongchau.com.vn/bai-viet/phan-biet-tieu-duong-tuyp-1-va-tuyp-2.html
+  publisher: Nhà thuốc Long Châu
+  lang: vi
+  kind: html
+  topic: type1 vs type2
+- id: viendinhduong-gi
+  url: https://viendinhduong.vn/vi/article/tin-tuc/694620b764bfc5e92f0bdcc5
+  publisher: Viện Dinh dưỡng Quốc gia
+  lang: vi
+  kind: html
+  topic: glycemic index diet
+- id: sknds-bien-chung
+  url: https://suckhoedoisong.vn/dai-thao-duong-typ-2-va-nhung-bien-chung-16981997.htm
+  publisher: Sức khỏe & Đời sống (Bộ Y tế)
+  lang: vi
+  kind: html
+  topic: type2 complications
+- id: niddk-type1
+  url: https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes/type-1-diabetes
+  publisher: NIDDK
+  lang: en
+  kind: html
+  topic: type1
+- id: niddk-type2
+  url: https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes/type-2-diabetes
+  publisher: NIDDK
+  lang: en
+  kind: html
+  topic: type2
+- id: niddk-prediabetes
+  url: https://www.niddk.nih.gov/health-information/diabetes/overview/what-is-diabetes/prediabetes-insulin-resistance
+  publisher: NIDDK
+  lang: en
+  kind: html
+  topic: prediabetes
+- id: niddk-tests-diagnosis
+  url: https://www.niddk.nih.gov/health-information/diabetes/overview/tests-diagnosis
+  publisher: NIDDK
+  lang: en
+  kind: html
+  topic: diagnosis
+- id: niddk-insulin-medicines
+  url: https://www.niddk.nih.gov/health-information/diabetes/overview/insulin-medicines-treatments
+  publisher: NIDDK
+  lang: en
+  kind: html
+  topic: insulin medicines
+- id: who-fact-sheet
+  url: https://www.who.int/news-room/fact-sheets/detail/diabetes
+  publisher: WHO
+  lang: en
+  kind: html
+  topic: definition overview
+- id: who-classification-pdf
+  url: https://iris.who.int/server/api/core/bitstreams/2cb3ab68-a52a-402e-ad47-8bc5a4edc834/content
+  publisher: WHO
+  lang: en
+  kind: pdf
+  topic: classification
+  title: Classification of diabetes mellitus (WHO, 2019)
+- id: nhs-type2-symptoms
+  url: https://www.nhs.uk/conditions/type-2-diabetes/symptoms/
+  publisher: NHS
+  lang: en
+  kind: html
+  topic: type2 symptoms
+- id: nhs-type2-treatment
+  url: https://www.nhs.uk/conditions/type-2-diabetes/treatment/
+  publisher: NHS
+  lang: en
+  kind: html
+  topic: type2 treatment
+- id: nhs-gestational
+  url: https://www.nhs.uk/conditions/gestational-diabetes/
+  publisher: NHS
+  lang: en
+  kind: html
+  topic: gestational
+- id: nhs-metformin
+  url: https://www.nhs.uk/medicines/metformin/
+  publisher: NHS
+  lang: en
+  kind: html
+  topic: metformin
+- id: ndss-type2-pdf
+  url: https://www.ndss.com.au/wp-content/uploads/fact-sheets/fact-sheet-understanding-type2-diabetes.pdf
+  publisher: NDSS
+  lang: en
+  kind: pdf
+  topic: type2
+  title: Understanding type 2 diabetes (NDSS fact sheet)
+- id: ndss-pregnancy
+  url: https://www.ndss.com.au/about-diabetes/pregnancy/pregnancy-and-diabetes-faqs/
+  publisher: NDSS
+  lang: en
+  kind: html
+  topic: gestational
+- id: medlineplus-type2
+  url: https://medlineplus.gov/diabetestype2.html
+  publisher: MedlinePlus
+  lang: en
+  kind: html
+  topic: type2
+- id: medlineplus-diabetic-diet
+  url: https://medlineplus.gov/diabeticdiet.html
+  publisher: MedlinePlus
+  lang: en
+  kind: html
+  topic: diet
+- id: dukuk-type2-medicine
+  url: https://www.diabetes.org.uk/about-diabetes/type-2-diabetes/medicine
+  publisher: Diabetes UK
+  lang: en
+  kind: html
+  topic: medicines
+- id: dukuk-eat-well-pdf
+  url: https://www.diabetes.org.uk/sites/default/files/2023-07/Diabetes%20UK%20Information%20Prescription%20-%20Eat%20well.pdf
+  publisher: Diabetes UK
+  lang: en
+  kind: pdf
+  topic: diet
+  title: 'Diabetes UK information prescription: Eat well'
+- id: hk-chp-diabetes
+  url: https://www.chp.gov.hk/en/healthtopics/content/25/59.html
+  publisher: Hong Kong Department of Health
+  lang: en
+  kind: html
+  topic: definition risk factors
+- id: hk-chp-diet
+  url: https://www.chp.gov.hk/en/static/102339.html
+  publisher: Hong Kong Department of Health
+  lang: en
+  kind: html
+  topic: diet
+- id: ada-type2
+  url: https://diabetes.org/about-diabetes/type-2
+  publisher: American Diabetes Association
+  lang: en
+  kind: html
+  topic: type2
+- id: ada-symptoms
+  url: https://diabetes.org/about-diabetes/warning-signs-symptoms
+  publisher: American Diabetes Association
+  lang: en
+  kind: html
+  topic: symptoms
+- id: ada-atrisk-pdf
+  url: https://professional.diabetes.org/sites/dpro/files/2023-12/pe23_at_risk_v5.pdf
+  publisher: American Diabetes Association
+  lang: en
+  kind: pdf
+  topic: prediabetes risk
+  title: How to find out if you have diabetes (American Diabetes Association)
