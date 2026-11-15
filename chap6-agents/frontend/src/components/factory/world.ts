@@ -145,6 +145,18 @@ function sharedRoomGeometry() {
 }
 type RoomGeometry = ReturnType<typeof sharedRoomGeometry>;
 
+/**
+ * Rooms whose worker stands on the floor at their front-left instead of on the plinth: the code rooms (a
+ * worker inside a bell jar is blurred by the glass at projector size) and the orchestrator, whose plinth top
+ * belongs to the rail switch. Clear of the tracks and of the tool pads.
+ */
+const FLOOR_ANCHOR: Partial<Record<StationId, [number, number]>> = {
+  safety_in: [-0.7, 1.05],
+  orchestrator: [-0.85, 1.1],
+  risk: [-0.95, 0.9],
+  safety_out: [-0.95, 1.0],
+};
+
 export interface StateTextures { crackle: THREE.Texture; crack: THREE.Texture; book: THREE.SpriteMaterial; warning: THREE.SpriteMaterial }
 
 function buildRoom(id: StationId, g: RoomGeometry, m: Materials, tex: StateTextures, swirls: Record<StationKind, THREE.Texture>) {
@@ -198,6 +210,11 @@ function buildRoom(id: StationId, g: RoomGeometry, m: Materials, tex: StateTextu
     const kettle = new THREE.Group();
     kettle.position.set(0.42, 0, -0.62);
     kettle.scale.setScalar(0.85);
+    if (id === "orchestrator") {
+      // The rail switch turns on this plinth through the front, east and back exits: keep the back-right clear.
+      kettle.position.set(-0.6, 0, -0.66);
+      kettle.rotation.y = Math.PI;
+    }
     const body = tinted(kettleMaterial());
     const pot = shadowed(new THREE.Mesh(g.kettle, body));
     const spout = shadowed(new THREE.Mesh(g.spout, body));
@@ -237,7 +254,14 @@ function buildRoom(id: StationId, g: RoomGeometry, m: Materials, tex: StateTextu
     bob.add(arch, knob);
     badgeY = 2.8;
   }
-  bob.add(anchor);
+  const floor = FLOOR_ANCHOR[id];
+  if (floor) {
+    // Workers too big for the glass, and the switch-operator beside her lever, stand on the chocolate in front.
+    anchor.position.set(floor[0], 0, floor[1]);
+    station.add(anchor);
+  } else {
+    bob.add(anchor);
+  }
 
   const badge = new THREE.Sprite(tex.book);
   badge.scale.setScalar(0.75);

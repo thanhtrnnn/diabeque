@@ -45,15 +45,23 @@ export const DEV_SCENARIOS: Scenario[] = [
         s("intake", "Đủ 7/7 trường.", { tools: [tool("compute_bmi"), tool("validate_profile")] }),
         s("risk", "Tiền tiểu đường 35%.", { tools: [tool("predict_diabetes_risk")] }),
         s("advisor", "Viết 4 lời khuyên có trích dẫn.", { tools: [tool("get_recommendations")] }),
-        s("safety_out", "Câu trả lời an toàn."),
+        s("safety_out", "Đã kiểm 3 phần do LLM viết; cờ: dosage_removed"),
       ] },
     ],
+  },
+  {
+    id: "dev-greeting", label: "Chào hỏi",
+    turns: [{ message: "xin chào", sections: answer, steps: [
+      s("safety_in", "Không có dấu hiệu khẩn cấp."),
+      s("orchestrator", "Ý định: greeting (LLM: lời chào)."),
+      s("safety_out", "Câu trả lời an toàn."),
+    ] }],
   },
   {
     id: "dev-fallback", label: "LLM sập",
     turns: [{ message: "tôi muốn biết nguy cơ", sections: question, steps: [
       s("safety_in", "Không có dấu hiệu khẩn cấp."),
-      s("orchestrator", "Mô hình không phản hồi, dùng luật phân loại.", { fallback: "rules" }),
+      s("orchestrator", "Ý định: assess_risk (luật dự phòng: mô hình không phản hồi).", { fallback: "rules" }),
       s("intake", "Trích trường bằng luật.", { fallback: "rules" }),
       s("safety_out", "Gửi câu hỏi bổ sung."),
     ] }],

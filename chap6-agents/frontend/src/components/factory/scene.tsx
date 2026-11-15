@@ -12,10 +12,12 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
-import { AGENT_LABELS } from "@/lib/agents";
+import { AGENT_IDS, AGENT_LABELS, type AgentId } from "@/lib/agents";
+import { castCues } from "@/lib/factory/cast";
 import { STATIONS, type StationId } from "@/lib/factory/layout";
 import type { RunState, StationState } from "@/lib/factory/run-state";
-import { SweetRunner, buildSweet } from "./candy";
+import { SweetRunner, buildSweet, selectable } from "./candy";
+import { buildCharacter, isMiner, isSwitchOperator, type CharacterRig } from "./characters";
 import { PALETTE, disposeTree } from "./materials";
 import styles from "./scene.module.css";
 import { animateRoom, buildWorld, paintRoom, stationPosition, type WorldHandles } from "./world";
@@ -206,7 +208,17 @@ interface EngineHooks {
   onLost: () => void;
 }
 
-const LLM_STATIONS = (Object.keys(STATIONS) as StationId[]).filter((id) => STATIONS[id].kind === "llm");
+const ROOM_IDS = Object.keys(STATIONS) as StationId[];
+const LLM_STATIONS = ROOM_IDS.filter((id) => STATIONS[id].kind === "llm");
+const AGENTS = new Set<string>(AGENT_IDS);
+/** Workers are modelled about one unit tall; this makes them read at 1280×720 on a projector. Those on a plinth stay a little smaller. */
+const CHARACTER_SCALE: Record<AgentId, number> = {
+  safety_in: 1.75, orchestrator: 1.7, intake: 1.55, risk: 1.7, knowledge: 1.75, advisor: 1.55, safety_out: 1.7,
+};
+/** Height of a room's plinth top above its station origin (world.ts PLINTH_H). */
+const PLINTH_TOP = 0.3;
+/** Where the miner stands in the cellar, relative to the knowledge station: front-left of the lift, low enough on screen to clear the room's label. */
+const MINER_BELOW = new THREE.Vector3(-0.35, -2.2, 1.05);
 
 class Engine {
   private readonly renderer: THREE.WebGLRenderer;
@@ -214,7 +226,11 @@ class Engine {
   private readonly camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
   private readonly world: WorldHandles;
   private readonly runner: SweetRunner;
-  private readonly env: THREE.Texture;
+  private readonly envTarget: THREE.WebGLRenderTarget;
+  private readonly sun: THREE.DirectionalLight;
+  private readonly cast = {} as Record<AgentId, CharacterRig>;
+  private state: RunState | null = null;
+  private hovered: StationId | null = null;
   private readonly observer: ResizeObserver;
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
@@ -227,47 +243,60 @@ class Engine {
   constructor(private readonly host: HTMLElement, private readonly hooks: EngineHooks) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer = renderer;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.domElement.className = styles.canvas;
-    host.prepend(renderer.domElement);
+    try {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.domElement.className = styles.canvas;
+      host.prepend(renderer.domElement);
 
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const room = new RoomEnvironment();
-    this.env = pmrem.fromScene(room, 0.04).texture;
-    room.dispose();
-    pmrem.dispose();
-    this.scene.environment = this.env;
-    this.scene.environmentIntensity = 0.35;
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const room = new RoomEnvironment();
+      this.envTarget = pmrem.fromScene(room, 0.04);
+      room.dispose();
+      pmrem.dispose();
+      this.scene.environment = this.envTarget.texture;
+      this.scene.environmentIntensity = 0.35;
 
-    const hemi = new THREE.HemisphereLight(PALETTE.sugar, PALETTE.chocolate2, 1.1);
-    const sun = new THREE.DirectionalLight("#fff0d8", 2.6);
-    sun.position.set(-8, 16, 10);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 12, bottom: -12, near: 1, far: 50 });
-    sun.shadow.bias = -0.0004;
-    sun.shadow.normalBias = 0.03;
-    this.scene.add(hemi, sun);
+      const hemi = new THREE.HemisphereLight(PALETTE.sugar, PALETTE.chocolate2, 1.1);
+      const sun = new THREE.DirectionalLight("#fff0d8", 2.6);
+      this.sun = sun;
+      sun.position.set(-8, 16, 10);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048);
+      Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 12, bottom: -12, near: 1, far: 50 });
+      sun.shadow.bias = -0.0004;
+      sun.shadow.normalBias = 0.03;
+      this.scene.add(hemi, sun);
 
-    this.world = buildWorld(this.scene);
-    const sweet = buildSweet();
-    this.scene.add(sweet);
-    const curves = Object.fromEntries(Object.entries(this.world.tracks).map(([id, t]) => [id, t.curve]));
-    this.runner = new SweetRunner(sweet, curves, stationPosition("gate"));
+      this.world = buildWorld(this.scene);
+      const sweet = buildSweet();
+      this.scene.add(sweet);
+      const curves = Object.fromEntries(Object.entries(this.world.tracks).map(([id, t]) => [id, t.curve]));
+      this.runner = new SweetRunner(sweet, curves, stationPosition("gate"));
+      this.buildCast();
 
-    const target = this.world.frame[0].getCenter(new THREE.Vector3());
-    const dir = new THREE.Vector3(Math.sin(AZIMUTH) * Math.cos(ELEVATION), Math.sin(ELEVATION), Math.cos(AZIMUTH) * Math.cos(ELEVATION));
-    this.camera.position.copy(target).addScaledVector(dir, 60);
-    this.camera.lookAt(target);
-    this.camera.far = 140;
+      const target = this.world.frame[0].getCenter(new THREE.Vector3());
+      const dir = new THREE.Vector3(Math.sin(AZIMUTH) * Math.cos(ELEVATION), Math.sin(ELEVATION), Math.cos(AZIMUTH) * Math.cos(ELEVATION));
+      this.camera.position.copy(target).addScaledVector(dir, 60);
+      this.camera.lookAt(target);
+      this.camera.far = 140;
 
-    this.observer = new ResizeObserver(() => this.resize());
-    this.observer.observe(host);
+      this.observer = new ResizeObserver(() => this.resize());
+      this.observer.observe(host);
+    } catch (error) {
+      // Free the context before the page falls back, or a retry could hit the browser's context limit.
+      for (const rig of Object.values(this.cast)) rig.dispose();
+      for (const rig of Object.values(this.cast)) rig.dispose();
+    disposeTree(this.scene);
+      renderer.forceContextLoss();
+      renderer.dispose();
+      renderer.domElement.remove();
+      throw error;
+    }
     const canvas = renderer.domElement;
     canvas.addEventListener("webglcontextlost", this.lost);
     canvas.addEventListener("pointerdown", this.pointerDown);
@@ -277,11 +306,34 @@ class Engine {
     renderer.setAnimationLoop(this.frame);
   }
 
+  /** One worker per agent on its room's anchor, turned toward the camera; clicking one selects its station. */
+  private buildCast(): void {
+    for (const id of AGENT_IDS) {
+      const rig = buildCharacter(id);
+      this.cast[id] = rig;
+      selectable(rig.root, id);
+      rig.root.rotation.y = AZIMUTH;
+      rig.root.scale.setScalar(CHARACTER_SCALE[id]);
+      const anchor = this.world.anchors[id];
+      if (isMiner(rig)) {
+        // The miner rides between plinth and cellar, so it hangs off the station, not the bobbing room.
+        const home = anchor.position.clone().setY(PLINTH_TOP);
+        rig.setLift(home, MINER_BELOW);
+        rig.root.position.copy(home);
+        this.world.stations[id].add(rig.root);
+      } else {
+        anchor.add(rig.root);
+      }
+      if (isSwitchOperator(rig)) this.world.rooms[id].bob.add(rig.switchPiece);
+    }
+  }
+
   show(state: RunState, selected: StationId | null, reducedMotion: boolean): void {
     this.stations = state.stations;
+    this.state = state;
     this.reduced = reducedMotion;
     const tex = this.world.stateTextures;
-    for (const id of Object.keys(this.world.rooms) as StationId[]) paintRoom(this.world.rooms[id], state.stations[id], selected === id, tex);
+    for (const id of ROOM_IDS) paintRoom(this.world.rooms[id], state.stations[id], selected === id, tex);
     const lit = new Set(state.litTracks);
     for (const [id, { mesh }] of Object.entries(this.world.tracks)) {
       const on = lit.has(id as never);
@@ -295,14 +347,33 @@ class Engine {
     cloud.color.set(down ? PALETTE.ash : PALETTE.sugar);
     cloud.emissiveIntensity = down ? 0 : 0.12;
     this.world.cloud.position.y = 4.5 - (down ? 0.35 : 0);
+    this.cue();
+  }
+
+  /** Hands the run's cues to the workers: moods, the switch, the clipboard, the balance, the lift, the stamp. */
+  private cue(): void {
+    if (!this.state) return;
+    const cues = castCues(this.state, this.hovered);
+    const { cast } = this;
+    for (const id of AGENT_IDS) {
+      cast[id].setReducedMotion(this.reduced);
+      cast[id].setMood(cues.moods[id]);
+    }
+    cast.orchestrator.act?.("switch", cues.switchIndex);
+    cast.orchestrator.act?.("book", cues.ruleBook ? 1 : 0);
+    cast.intake.act?.("fields", cues.fields);
+    cast.risk.act?.("tilt", cues.tilt ?? undefined);
+    cast.knowledge.act?.("descend", cues.minerBelow ? 1 : 0);
+    cast.safety_out.act?.("stamp", cues.stamp === "removed" ? 2 : cues.stamp === "ok" ? 1 : 0);
   }
 
   private frame = () => {
     const dt = Math.min(this.timer.getDelta(), 0.1);
     const time = this.timer.elapsedTime;
     this.runner.update(dt, this.reduced);
+    for (const id of AGENT_IDS) this.cast[id].update(dt);
     if (this.stations) {
-      for (const id of Object.keys(this.world.rooms) as StationId[]) animateRoom(this.world.rooms[id], this.stations[id], time, this.reduced);
+      for (const id of ROOM_IDS) animateRoom(this.world.rooms[id], this.stations[id], time, this.reduced);
       const busy = LLM_STATIONS.some((id) => this.stations![id] === "active");
       if (busy) this.world.materials.cloud.emissiveIntensity = 0.2 + 0.25 * (0.5 + 0.5 * Math.sin(time * 4));
     }
@@ -377,7 +448,13 @@ class Engine {
     if (this.hoverFrame) return;
     this.hoverFrame = requestAnimationFrame(() => {
       this.hoverFrame = 0;
-      this.renderer.domElement.style.cursor = this.pick(event) ? "pointer" : "";
+      const id = this.pick(event);
+      this.renderer.domElement.style.cursor = id ? "pointer" : "";
+      const hovered = id && AGENTS.has(id) ? (id as StationId) : null;
+      if (hovered !== this.hovered) {
+        this.hovered = hovered;
+        this.cue();
+      }
     });
   };
 
@@ -395,6 +472,7 @@ class Engine {
     canvas.removeEventListener("pointerdown", this.pointerDown);
     canvas.removeEventListener("pointerup", this.pointerUp);
     canvas.removeEventListener("pointermove", this.pointerMove);
+    for (const rig of Object.values(this.cast)) rig.dispose();
     disposeTree(this.scene);
     for (const material of Object.values(this.world.materials)) {
       for (const value of Object.values(material)) if (value instanceof THREE.Texture) value.dispose();
@@ -404,7 +482,9 @@ class Engine {
     for (const t of [tex.crackle, tex.crack, tex.book.map, tex.warning.map]) t?.dispose();
     tex.book.dispose();
     tex.warning.dispose();
-    this.env.dispose();
+    this.envTarget.dispose();
+    this.sun.dispose();
+    this.renderer.forceContextLoss();
     this.renderer.dispose();
     canvas.remove();
   }
