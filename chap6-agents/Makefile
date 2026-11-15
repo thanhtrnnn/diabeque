@@ -1,7 +1,7 @@
 # Chương 6 — hệ đa agent Diabeque. Venv và Neo4j dùng chung ở thư mục gốc repo; KB do chap5-rag nạp.
 PY := ../.venv/bin/python
 
-.PHONY: train api web eval test report
+.PHONY: train api web eval scenarios test report
 
 # Cần data/survey.db (dựng bằng `make -C ../chap5-rag train` rồi liên kết sang data/), không kèm trong repo.
 train:
@@ -15,6 +15,10 @@ web:
 
 eval:
 	$(PY) -m eval.run_agents
+
+# Ghi lại vết chạy thật (cần Neo4j và LLM) cho trang nhà máy chạy offline.
+scenarios:
+	$(PY) -m eval.record_scenarios
 
 test:
 	$(PY) -m pytest -q tests
