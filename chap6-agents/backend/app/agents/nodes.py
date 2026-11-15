@@ -432,6 +432,23 @@ def advisor_query(profile: dict, risk: dict) -> str:
     return "; ".join(parts) or "lối sống lành mạnh phòng ngừa đái tháo đường"
 
 
+FACTS_INTRO = "Không tạo được lời khuyên riêng lúc này; dưới đây là các khuyến nghị trong kho tài liệu."
+MAX_FACTS = 6
+
+
+def graph_fact_lines(rec_hits: list[dict]) -> list[str]:
+    """Bullets from the recommendation hits' graph facts: deduplicated, at most MAX_FACTS, each citing the hit it came from."""
+    seen, lines = set(), []
+    for i, h in enumerate(rec_hits):
+        for fact in h.get("facts", []):
+            if fact in seen or len(lines) >= MAX_FACTS:
+                continue
+            seen.add(fact)
+            if line := passage_line(fact, i + 1):
+                lines.append(line)
+    return lines
+
+
 @traced(Agent.ADVISOR)
 def advisor(state: SessionState):
     profile, risk = state["profile"], state["risk"]
@@ -443,20 +460,29 @@ def advisor(state: SessionState):
             for h in rec["hits"]]
     question = (f"HỒ SƠ: {fields.describe_profile(profile)}\nKẾT QUẢ ƯỚC LƯỢNG: {risk['label_name']}\n"
                 "Hãy đưa 3 đến 6 lời khuyên cụ thể cho người này, mỗi ý có trích dẫn.")
-    messages = gen.build_messages(question, hits)
-    messages[0]["content"] = ADVISOR_SYSTEM
-    reply = gen.client().chat.completions.create(model=gen.settings().model_name, messages=messages, temperature=0.1, max_tokens=900)
-    gated = gen.gate(reply.choices[0].message.content or "", len(hits))
-    offset = len(state.get("sources", []))
-    if gated.state.value == "answered":
-        section = {"kind": "advice", "title": "Lời khuyên", "text": offset_citations(gated.text, offset)}
-        summary = f"Lời khuyên với {len(gated.used)} trích dẫn"
+    offset, fallback = len(state.get("sources", [])), None
+    try:
+        ensure_llm(state)
+        messages = gen.build_messages(question, hits)
+        messages[0]["content"] = ADVISOR_SYSTEM
+        reply = gen.client().chat.completions.create(model=gen.settings().model_name, messages=messages, temperature=0.1, max_tokens=900)
+        gated = gen.gate(reply.choices[0].message.content or "", len(hits))
+        state_name, text, used = gated.state.value, gated.text, len(gated.used)
+    except Exception as e:  # LLM down or generation failed: list the graph's own recommendations instead
+        if not isinstance(e, LLMUnavailable):
+            calls.append(call("advisor_llm", {"query": query}, {"error": f"{type(e).__name__}: {e}"}))
+        fallback = "graph_facts"
+        lines = graph_fact_lines(rec["hits"])
+        state_name, text, used = ("answered", "\n".join([FACTS_INTRO, *lines]), len(lines)) if lines else ("", "", 0)
+    if state_name == "answered":
+        section = {"kind": "advice", "title": "Lời khuyên", "text": offset_citations(text, offset)}
+        summary = f"Dự phòng: {used} khuyến nghị từ đồ thị tri thức, không dùng LLM" if fallback else f"Lời khuyên với {used} trích dẫn"
     else:
         section = {"kind": "advice", "title": "Lời khuyên",
                    "text": "Chưa tìm được khuyến nghị có nguồn phù hợp. Anh/chị nên trao đổi với bác sĩ để được tư vấn và xét nghiệm."}
-        summary = "Không có lời khuyên qua được cổng trích dẫn"
+        summary = "Dự phòng: không có khuyến nghị trong đồ thị" if fallback else "Không có lời khuyên qua được cổng trích dẫn"
     return ({"sources": [*state.get("sources", []), *rec["hits"]], "sections": [*state.get("sections", []), section]},
-            summary, calls)
+            summary, calls, fallback)
 
 
 # ------------------------------------------------------------------ safety (out)
