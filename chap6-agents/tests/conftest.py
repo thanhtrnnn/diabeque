@@ -19,6 +19,7 @@ def offline(monkeypatch):
     monkeypatch.setattr(tools, "get_recommendations", lambda q, topic=None, k=5: {"hits": [hit], "top_score": .9, "topic": topic})
     monkeypatch.setattr(tools, "search_knowledge", lambda q, topic=None: {
         "state": "answered", "text": "Khát nhiều [[cite:S1]].", "hits": [hit], "used": ["S1"], "top_score": .9})
+    monkeypatch.setattr(tools, "search_passages", lambda q, topic=None, k=3: {"hits": [hit], "top_score": .9, "topic": topic})
 
     class Reply:
         choices = [type("C", (), {"message": type("M", (), {"content": "Đi bộ 30 phút mỗi ngày [[cite:S1]]. Dùng thuốc 500 mg."})()})()]

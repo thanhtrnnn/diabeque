@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 from .. import answer as gen
 from . import fields, safety, tools
 from .coderef import code_ref
-from .llm import ensure_llm, structured
+from .llm import LLMUnavailable, ensure_llm, structured
 from .state import AGENT_LABELS, Agent, Intent, SessionState, Step, ToolCall
 
 # ------------------------------------------------------------------ helpers
@@ -355,20 +355,46 @@ def risk(state: SessionState):
 # ------------------------------------------------------------------ knowledge
 
 
+PASSAGES_INTRO = "Không tạo được câu trả lời lúc này; dưới đây là các đoạn tài liệu liên quan."
+PASSAGE_CHARS = 280
+
+
+def passage_line(text: str, n: int) -> str:
+    """One bullet for a retrieved chunk: its first PASSAGE_CHARS characters, cut at a word, with its citation."""
+    flat = " ".join(text.split())
+    if len(flat) > PASSAGE_CHARS:
+        flat = flat[:PASSAGE_CHARS].rsplit(" ", 1)[0]
+    return f"- {flat} [[cite:S{n}]]"
+
+
 @traced(Agent.KNOWLEDGE)
 def knowledge(state: SessionState):
     topic = (state.get("risk") or {}).get("topic")
-    out = tools.search_knowledge(state["message"], topic)
-    brief = {k: out[k] for k in ("state", "top_score", "used") if k in out} | {"hits": [h["chunk_id"] for h in out["hits"]]}
+    args = {"question": state["message"], "topic": topic}
+    calls, fallback = [], None
+    try:
+        ensure_llm(state)
+        out = tools.search_knowledge(state["message"], topic)
+        calls.append(call("search_knowledge", args, {k: out[k] for k in ("state", "top_score", "used") if k in out}
+                          | {"hits": [h["chunk_id"] for h in out["hits"]]}))
+    except Exception as e:  # LLM down or generation failed: show the retrieved passages instead (Neo4j errors propagate)
+        if not isinstance(e, LLMUnavailable):
+            calls.append(call("search_knowledge", args, {"error": f"{type(e).__name__}: {e}"}))
+        out = tools.search_passages(state["message"], topic)
+        calls.append(call("search_passages", args, {"top_score": out["top_score"], "hits": [h["chunk_id"] for h in out["hits"]]}))
+        fallback = "passages"
+        out["state"] = "answered" if out["hits"] else "out_of_scope"
+        out["text"] = "\n".join([PASSAGES_INTRO, *(passage_line(h["text"], i + 1) for i, h in enumerate(out["hits"]))])
     if out["state"] == "answered":
-        sections = [{"kind": "conclusion", "title": "Trả lời", "text": out["text"]}]
+        title = "Đoạn tài liệu liên quan" if fallback else "Trả lời"
+        sections = [{"kind": "conclusion", "title": title, "text": out["text"]}]
     elif out["state"] == "out_of_scope":
         sections = [{"kind": "notice", "title": "Ngoài phạm vi", "text": OUT_OF_SCOPE_TEXT}]
     else:
         sections = [{"kind": "notice", "title": "Chưa đủ bằng chứng",
                      "text": "Chưa tìm thấy bằng chứng trong kho tài liệu để trả lời câu hỏi này."}]
-    return ({"sources": out["hits"], "sections": sections}, f"RAG: {out['state']}, {len(out.get('used', []))} trích dẫn",
-            [call("search_knowledge", {"question": state["message"], "topic": topic}, brief)])
+    summary = f"Dự phòng: {len(out['hits'])} đoạn tài liệu, không dùng LLM" if fallback else f"RAG: {out['state']}, {len(out.get('used', []))} trích dẫn"
+    return {"sources": out["hits"], "sections": sections}, summary, calls, fallback
 
 
 # ------------------------------------------------------------------ advisor

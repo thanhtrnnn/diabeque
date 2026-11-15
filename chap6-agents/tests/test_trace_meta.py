@@ -87,14 +87,6 @@ def test_llm_down_forces_rules_in_intake(offline_llm_ok):
     assert {s["agent"]: s["fallback"] for s in out["trace"]}["intake"] == "rules"
 
 
-def test_node_exception_tagged_with_node(offline, monkeypatch):
-    monkeypatch.setattr(tools, "search_knowledge", lambda q, topic=None: (_ for _ in ()).throw(RuntimeError("neo4j")))
-    with pytest.raises(RuntimeError) as e:
-        run(offline, "HbA1c là gì")
-    assert e.value.diabeque_node == "knowledge"
-
-
-@pytest.mark.xfail(strict=True, reason="tools.search_passages arrives in Task 3")
 def test_node_exception_tagged(offline, monkeypatch):
     monkeypatch.setattr(tools, "search_knowledge", lambda q, topic=None: (_ for _ in ()).throw(RuntimeError("neo4j")))
     monkeypatch.setattr(tools, "search_passages", lambda q, topic=None, k=3: (_ for _ in ()).throw(RuntimeError("neo4j")))

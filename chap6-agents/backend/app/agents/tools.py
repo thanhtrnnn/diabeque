@@ -107,12 +107,18 @@ def get_recommendations(query: str, topic: str | None = None, k: int = 5) -> dic
     return {"hits": [hit_record(h) for h in r.hits], "top_score": round(r.top_vector_score, 4), "topic": r.topic}
 
 
+def _scoped_retrieval(question: str, topic: str | None, k: int):
+    """Retrieve and apply the out-of-scope rule shared by both knowledge paths; returns (retrieval, in_scope)."""
+    r = retrieve(question, Topic(topic) if topic else None, k=k)
+    return r, r.top_vector_score >= OUT_OF_SCOPE_MIN_COSINE and bool(r.hits)
+
+
 def search_knowledge(question: str, topic: str | None = None) -> dict:
     """Trả lời câu hỏi kiến thức bằng pipeline RAG của A8: truy xuất, sinh, kiểm trích dẫn.
 
     Citations in `text` are [[cite:Sn]], n indexing `hits`."""
-    r = retrieve(question, Topic(topic) if topic else None)
-    if r.top_vector_score < OUT_OF_SCOPE_MIN_COSINE or not r.hits:
+    r, in_scope = _scoped_retrieval(question, topic, k=5)
+    if not in_scope:
         return {"state": AnswerState.OUT_OF_SCOPE.value, "text": "", "hits": [], "top_score": round(r.top_vector_score, 4)}
     raw = "".join(gen.stream_answer(question, r.hits))
     gated = gen.gate(raw, len(r.hits))
@@ -120,6 +126,15 @@ def search_knowledge(question: str, topic: str | None = None) -> dict:
             "used": gated.used, "top_score": round(r.top_vector_score, 4), "topic": r.topic}
 
 
-FUNCTIONS = [compute_bmi, validate_profile, predict_diabetes_risk, predict_diabetes_type, get_recommendations, search_knowledge]
+def search_passages(question: str, topic: str | None = None, k: int = 3) -> dict:
+    """Chỉ truy xuất các đoạn tài liệu liên quan, không dùng LLM; dự phòng khi không sinh được câu trả lời.
+
+    Same out-of-scope rule as search_knowledge: below the cosine threshold, `hits` is empty."""
+    r, in_scope = _scoped_retrieval(question, topic, k=k)
+    return {"hits": [hit_record(h) for h in r.hits] if in_scope else [], "top_score": round(r.top_vector_score, 4), "topic": r.topic}
+
+
+FUNCTIONS = [compute_bmi, validate_profile, predict_diabetes_risk, predict_diabetes_type, get_recommendations, search_knowledge,
+             search_passages]
 BY_NAME: dict[str, Callable] = {f.__name__: f for f in FUNCTIONS}
 LC_TOOLS = [StructuredTool.from_function(f) for f in FUNCTIONS]
