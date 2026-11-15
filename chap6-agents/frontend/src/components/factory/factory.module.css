@@ -142,7 +142,9 @@
 }
 
 .askSend:disabled {
-  opacity: 0.45;
+  /* Solid muted fill instead of opacity: stays legible (5.1:1) on the projector while reading as "not yet". */
+  background: var(--color-candy-cocoa);
+  color: var(--color-candy-ash-ink);
   cursor: default;
 }
 
@@ -181,7 +183,8 @@
 }
 
 .control:disabled {
-  opacity: 0.5;
+  border-color: var(--color-candy-cocoa);
+  color: var(--color-candy-ash-ink);
   cursor: default;
 }
 
@@ -189,6 +192,12 @@
   border-color: var(--color-candy-lemon);
   background: var(--color-candy-lemon);
   color: var(--color-candy-chocolate);
+}
+
+.control[data-primary]:disabled {
+  border-color: var(--color-candy-cocoa);
+  background: var(--color-candy-cocoa);
+  color: var(--color-candy-ash-ink);
 }
 
 .switchTrack {
