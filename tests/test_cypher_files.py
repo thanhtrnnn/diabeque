@@ -257,14 +257,68 @@ def test_block_matches_source(block: Block):
 
 
 def test_every_python_query_is_listed():
-    """Mỗi chuỗi Cypher trong hàm/hằng đã khai báo nguồn phải có mặt trong một khối cùng nguồn."""
+    """Mỗi chuỗi Cypher trong hàm/hằng đã khai báo nguồn phải có mặt trong một khối cùng nguồn.
+
+    Chuỗi sinh từ vòng lặp (ràng buộc, dữ kiện) phải có đủ MỌI bản khai triển, không chỉ một.
+    """
     blocks = all_blocks()
     sources = {s for b in blocks for s in b.sources if "::" in s}
     for source in sorted(sources):
         listed = {norm(b.statement) for b in blocks if source in b.sources}
         _, per_string, _ = python_candidates(source)
         for cands in per_string:
-            assert cands & listed, f"{source}: có truy vấn chưa nằm trong tệp .cypher: {sorted(cands)[0][:90]}..."
+            missing = cands - listed
+            assert not missing, f"{source}: thiếu {len(missing)}/{len(cands)} khối cho truy vấn: {sorted(missing)[0][:90]}..."
+
+
+def test_loop_expansions_have_expected_counts():
+    blocks = all_blocks()
+    constraints = [b for b in blocks if b.name.startswith("constraint_")]
+    facts = [b for b in blocks if b.name.startswith("facts_") and b.file == "20_facts.cypher" and b.name != "facts_bilingual"]
+    assert len(constraints) == len(S.Label) == 10
+    assert len(facts) == len(S.FACT_KINDS) == 5
+
+
+SCANNED_FILES = [
+    "chap5-rag/backend/app/db.py",
+    "chap5-rag/backend/app/retrieval.py",
+    "chap5-rag/backend/app/main.py",
+    "chap5-rag/pipeline/ingest_docs.py",
+    "chap5-rag/pipeline/extract_facts.py",
+    "chap5-rag/pipeline/survey_ingest.py",
+    "chap6-agents/backend/app/db.py",
+    "chap6-agents/backend/app/retrieval.py",
+    "chap6-agents/backend/app/main.py",
+    "chap6-agents/backend/app/agents/safety.py",
+    "chap6-agents/backend/app/agents/nodes.py",
+]
+
+
+def _is_docstring(node: ast.AST, owner: ast.AST) -> bool:
+    body = getattr(owner, "body", [])
+    return bool(body) and isinstance(body[0], ast.Expr) and body[0].value is node
+
+
+def test_no_cypher_outside_declared_sources():
+    """Quét các tệp trong spec mục C: chuỗi Cypher ở hàm/hằng chưa khai báo trong .cypher là lỗi."""
+    declared = {s for b in all_blocks() for s in b.sources if "::" in s}
+    undeclared = []
+    for rel in SCANNED_FILES:
+        tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"))
+        for node in tree.body:
+            if isinstance(node, ast.Expr):
+                continue  # docstring của module
+            name = getattr(node, "name", None)
+            if name is None:
+                targets = node.targets if isinstance(node, ast.Assign) else [getattr(node, "target", None)]
+                name = next((t.id for t in targets if isinstance(t, ast.Name)), None)
+            owners = [node] + [n for n in ast.walk(node) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+            for s in _strings(node):
+                if any(_is_docstring(s, o) for o in owners):
+                    continue
+                if CYPHER_WORD.search(_literal_text(s)) and f"{rel}::{name}" not in declared:
+                    undeclared.append(f"{rel}::{name}")
+    assert not undeclared, f"Cypher chưa khai báo trong neo4j/cypher: {sorted(set(undeclared))}"
 
 
 def test_matcher_detects_drift():
