@@ -359,12 +359,16 @@ PASSAGES_INTRO = "Không tạo được câu trả lời lúc này; dưới đâ
 PASSAGE_CHARS = 280
 
 
-def passage_line(text: str, n: int) -> str:
-    """One bullet for a retrieved chunk: its first PASSAGE_CHARS characters, cut at a word, with its citation."""
-    flat = " ".join(text.split())
+def passage_line(text: str, n: int) -> str | None:
+    """One bullet for a retrieved chunk: its first PASSAGE_CHARS characters, cut at a word, with its citation.
+
+    Sentences that safety_out would drop (dose, definitive diagnosis) are removed first, so the citation always sits on
+    text that survives the filter. Returns None when nothing citable is left; callers skip that bullet."""
+    flat, _ = safety.filter_text(" ".join(text.split()))
     if len(flat) > PASSAGE_CHARS:
         flat = flat[:PASSAGE_CHARS].rsplit(" ", 1)[0]
-    return f"- {flat} [[cite:S{n}]]"
+    line = f"- {flat} [[cite:S{n}]]"
+    return line if flat and gen.CITE.search(safety.filter_text(line)[0]) else None
 
 
 @traced(Agent.KNOWLEDGE)
@@ -384,7 +388,8 @@ def knowledge(state: SessionState):
         calls.append(call("search_passages", args, {"top_score": out["top_score"], "hits": [h["chunk_id"] for h in out["hits"]]}))
         fallback = "passages"
         out["state"] = "answered" if out["hits"] else "out_of_scope"
-        out["text"] = "\n".join([PASSAGES_INTRO, *(passage_line(h["text"], i + 1) for i, h in enumerate(out["hits"]))])
+        lines = (passage_line(h["text"], i + 1) for i, h in enumerate(out["hits"]))
+        out["text"] = "\n".join([PASSAGES_INTRO, *(ln for ln in lines if ln)])
     if out["state"] == "answered":
         title = "Đoạn tài liệu liên quan" if fallback else "Trả lời"
         sections = [{"kind": "conclusion", "title": title, "text": out["text"]}]

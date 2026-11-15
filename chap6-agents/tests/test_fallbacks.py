@@ -95,3 +95,19 @@ def test_search_passages_out_of_scope_returns_no_hits(monkeypatch):
 
 def test_search_passages_has_code_ref():
     assert nodes.call("search_passages", {}, None)["code"]["path"].endswith("agents/tools.py")
+
+
+def test_passages_with_dose_in_last_sentence_keep_citation_through_safety(offline, monkeypatch):
+    dosed = {**HIT, "text": "Metformin giúp giảm đường huyết. Liều khởi đầu 500 mg mỗi ngày"}
+    monkeypatch.setattr(tools, "search_knowledge", boom)
+    monkeypatch.setattr(tools, "search_passages", lambda q, topic=None, k=3: {"hits": [dosed], "top_score": .9, "topic": None})
+    out = run(offline, "HbA1c là gì")
+    text = out["sections"][0]["text"]
+    assert out["sections"][0]["title"] == "Đoạn tài liệu liên quan"
+    assert "no_citation_left" not in out["safety_flags"]
+    assert "Metformin giúp giảm đường huyết. [[cite:S1]]" in text and "500 mg" not in text
+
+
+def test_passage_with_only_dose_text_is_skipped():
+    assert nodes.passage_line("Uống 500 mg mỗi ngày.", 1) is None
+    assert nodes.passage_line("Ăn nhiều rau.", 2) == "- Ăn nhiều rau. [[cite:S2]]"
