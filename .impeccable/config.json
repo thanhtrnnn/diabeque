@@ -1,0 +1,80 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "all-caps-body",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/69311-1794302216/content/factory-layout.html"
+        ],
+        "createdAt": "2026-11-10T09:17:52.141Z",
+        "reason": "Claude: uppercase only on short .lane labels in a throwaway brainstorm mockup"
+      },
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/69311-1794302216/content/factory-floor-v2.html"
+        ],
+        "createdAt": "2026-11-10T09:21:52.405Z",
+        "reason": "Claude: throwaway brainstorm wireframe; SVG diagram labels, final build will be sized for legibility"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/69311-1794302216/content/factory-floor-v2.html"
+        ],
+        "createdAt": "2026-11-10T09:21:52.418Z",
+        "reason": "Claude: throwaway brainstorm wireframe; SVG diagram labels, final build will be sized for legibility"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/69311-1794302216/content/factory-floor-v2.html"
+        ],
+        "createdAt": "2026-11-10T09:22:16.932Z",
+        "reason": "Claude: throwaway brainstorm wireframe; inline code chips in roster cards"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/69311-1794302216/content/factory-iso-v3.html"
+        ],
+        "createdAt": "2026-11-10T10:03:12.603Z",
+        "reason": "Claude: discarded brainstorm mockup, superseded by the three.js build"
+      },
+      {
+        "rule": "skipped-heading",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/69311-1794302216/content/factory-iso-v3.html"
+        ],
+        "createdAt": "2026-11-10T10:03:12.617Z",
+        "reason": "Claude: discarded brainstorm mockup, superseded by the three.js build"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/69311-1794302216/content/factory-iso-v4.html"
+        ],
+        "createdAt": "2026-11-10T10:03:12.630Z",
+        "reason": "Claude: discarded brainstorm mockup, superseded by the three.js build"
+      },
+      {
+        "rule": "skipped-heading",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/69311-1794302216/content/factory-iso-v4.html"
+        ],
+        "createdAt": "2026-11-10T10:03:12.643Z",
+        "reason": "Claude: discarded brainstorm mockup, superseded by the three.js build"
+      }
+    ]
+  }
+}

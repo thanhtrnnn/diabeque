@@ -19,3 +19,4 @@ chap6-agents/data/
 !chap6-agents/results/*.log
 *.out
 *.toc
+.superpowers/
