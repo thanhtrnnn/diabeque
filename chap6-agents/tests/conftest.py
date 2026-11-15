@@ -26,3 +26,13 @@ def offline(monkeypatch):
     monkeypatch.setattr(nodes.gen, "client", lambda: type("Cl", (), {"chat": type("Ch", (), {"completions": type("Co", (), {
         "create": staticmethod(lambda **kw: Reply())})()})()})())
     return graph.build(graph.InMemorySaver())
+
+
+@pytest.fixture
+def offline_llm_ok(offline, monkeypatch):
+    """Like `offline`, but the LLM `structured` call answers with valid objects instead of raising."""
+    answers = {"IntentDecision": nodes.IntentDecision(intent="knowledge", reason="câu hỏi kiến thức"),
+               "IntakeExtraction": nodes.IntakeExtraction()}
+    monkeypatch.setattr(nodes, "structured", lambda schema: type("Llm", (), {
+        "invoke": staticmethod(lambda prompt: answers[schema.__name__])})())
+    return offline

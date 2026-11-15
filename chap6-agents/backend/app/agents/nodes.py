@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 from .. import answer as gen
 from . import fields, safety, tools
 from .coderef import code_ref
-from .llm import structured
+from .llm import ensure_llm, structured
 from .state import AGENT_LABELS, Agent, Intent, SessionState, Step, ToolCall
 
 # ------------------------------------------------------------------ helpers
@@ -26,7 +26,11 @@ def traced(agent: Agent) -> Callable:
 
         def node(state: SessionState) -> dict:
             t0 = time.perf_counter()
-            update, summary, calls, *rest = fn(state)
+            try:
+                update, summary, calls, *rest = fn(state)
+            except Exception as exc:
+                exc.diabeque_node = agent.value  # lets the API say which agent failed
+                raise
             step: Step = {"agent": agent.value, "label": AGENT_LABELS[agent], "summary": summary, "tools": calls,
                           "ms": round((time.perf_counter() - t0) * 1000), "code": code,
                           "fallback": rest[0] if rest else None}
@@ -125,6 +129,7 @@ def orchestrator(state: SessionState):
     prompt = ORCHESTRATOR_PROMPT.format(history=history_text(state), status=status, message=state["message"])
     fallback = None
     try:
+        ensure_llm(state)
         decision = structured(IntentDecision).invoke(prompt)
         intent, how = decision.intent, f"LLM: {decision.reason}"
     except Exception as e:  # endpoint down or malformed tool call: rules keep the system usable
@@ -285,6 +290,7 @@ def intake(state: SessionState):
     prompt = INTAKE_PROMPT.format(asked=" ".join(asked) or "(không)", message=state["message"])
     fallback = None
     try:
+        ensure_llm(state)
         x = structured(IntakeExtraction).invoke(prompt)
     except Exception as e:
         x, note, fallback = IntakeExtraction(), f"trích xuất lỗi ({type(e).__name__})", "rules"

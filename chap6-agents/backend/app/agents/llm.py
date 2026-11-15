@@ -6,6 +6,16 @@ from langchain_openai import ChatOpenAI
 from pydantic import ValidationError
 
 from ..config import settings
+from .state import SessionState
+
+
+class LLMUnavailable(RuntimeError):
+    """The LLM is not reachable (simulated or real); callers fall back to rules."""
+
+
+def ensure_llm(state: SessionState) -> None:
+    if state.get("llm_down"):
+        raise LLMUnavailable("simulated outage")
 
 
 @lru_cache

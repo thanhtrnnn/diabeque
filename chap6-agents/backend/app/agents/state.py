@@ -69,6 +69,7 @@ class SessionState(TypedDict, total=False):
     risk: dict[str, Any] | None
     # Per turn (reset by the API before each run).
     message: str
+    llm_down: bool                     # simulated outage: LLM-backed agents must use their rules
     history: list[dict[str, str]]
     intent: str
     emergency: bool
@@ -80,5 +81,5 @@ class SessionState(TypedDict, total=False):
 
 
 TURN_DEFAULTS: dict[str, Any] = {
-    "intent": "", "emergency": False, "missing": [], "sources": [], "sections": [], "safety_flags": [], "trace": [],
+    "intent": "", "llm_down": False, "emergency": False, "missing": [], "sources": [], "sections": [], "safety_flags": [], "trace": [],
 }

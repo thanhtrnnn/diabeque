@@ -3,15 +3,17 @@
 import functools
 from pathlib import Path
 
-from backend.app.agents import nodes
+import pytest
+
+from backend.app.agents import nodes, tools
 from backend.app.agents.coderef import code_ref
 from backend.app.agents.state import TURN_DEFAULTS
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def run(g, msg, tid="t"):
-    return g.invoke({**TURN_DEFAULTS, "message": msg}, {"configurable": {"thread_id": tid}})
+def run(g, msg, tid="t", **extra):
+    return g.invoke({**TURN_DEFAULTS, "message": msg, **extra}, {"configurable": {"thread_id": tid}})
 
 
 def test_step_has_code_of_node_definition(offline):
@@ -68,3 +70,34 @@ def test_code_ref_points_at_def_line_through_decorators():
     ref = code_ref(target)
     assert Path(REPO_ROOT, ref["path"]) == Path(__file__).resolve()
     assert Path(__file__).read_text().splitlines()[ref["line"] - 1].strip() == "def target():"
+
+
+def test_llm_down_forces_rules(offline_llm_ok):
+    out = run(offline_llm_ok, "HbA1c là gì", llm_down=True)
+    assert next(s for s in out["trace"] if s["agent"] == "orchestrator")["fallback"] == "rules"
+
+
+def test_llm_down_off_keeps_llm_path(offline_llm_ok):
+    out = run(offline_llm_ok, "HbA1c là gì")
+    assert next(s for s in out["trace"] if s["agent"] == "orchestrator")["fallback"] is None
+
+
+def test_llm_down_forces_rules_in_intake(offline_llm_ok):
+    out = run(offline_llm_ok, "Tôi 52 tuổi, nam, cao 1m65 nặng 80kg, bị huyết áp cao. Tôi có nguy cơ không?", llm_down=True)
+    assert {s["agent"]: s["fallback"] for s in out["trace"]}["intake"] == "rules"
+
+
+def test_node_exception_tagged_with_node(offline, monkeypatch):
+    monkeypatch.setattr(tools, "search_knowledge", lambda q, topic=None: (_ for _ in ()).throw(RuntimeError("neo4j")))
+    with pytest.raises(RuntimeError) as e:
+        run(offline, "HbA1c là gì")
+    assert e.value.diabeque_node == "knowledge"
+
+
+@pytest.mark.xfail(strict=True, reason="tools.search_passages arrives in Task 3")
+def test_node_exception_tagged(offline, monkeypatch):
+    monkeypatch.setattr(tools, "search_knowledge", lambda q, topic=None: (_ for _ in ()).throw(RuntimeError("neo4j")))
+    monkeypatch.setattr(tools, "search_passages", lambda q, topic=None, k=3: (_ for _ in ()).throw(RuntimeError("neo4j")))
+    with pytest.raises(RuntimeError) as e:
+        run(offline, "HbA1c là gì")
+    assert e.value.diabeque_node == "knowledge"

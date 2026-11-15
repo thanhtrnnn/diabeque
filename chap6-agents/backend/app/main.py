@@ -7,10 +7,13 @@ the intent, profile, risk and full trace.
 
 import json
 import re
+import subprocess
 import time
 import uuid
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from functools import lru_cache
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +24,7 @@ from . import answer as gen
 from .agents import fields
 from .agents.graph import app as agent_graph
 from .agents.state import AGENT_LABELS, TURN_DEFAULTS, Agent
+from .config import ROOT, settings
 from .db import driver
 from .retrieval import corpus
 from .schema import DISCLAIMER, KB_ID, LABEL_TOPIC, Task
@@ -40,6 +44,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3200"], allo
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     conversation_id: str | None = None
+    simulate: Literal["llm_down"] | None = None  # honoured only when ALLOW_SIMULATION=1
 
 
 class ClassifyRequest(BaseModel):
@@ -96,7 +101,8 @@ def run_chat(req: ChatRequest, conversation_id: str) -> Iterator[tuple[str, dict
     graph = agent_graph()
     cfg = {"configurable": {"thread_id": conversation_id}}
     seen = 0
-    for update in graph.stream({**TURN_DEFAULTS, "message": req.message}, cfg, stream_mode="updates"):
+    llm_down = req.simulate == "llm_down" and settings().allow_simulation
+    for update in graph.stream({**TURN_DEFAULTS, "message": req.message, "llm_down": llm_down}, cfg, stream_mode="updates"):
         for node, delta in update.items():
             trace = (delta or {}).get("trace", [])
             for step in trace[seen:]:
@@ -183,7 +189,9 @@ def sse(req: ChatRequest) -> Iterator[str]:
     try:
         for name, data in run_chat(req, conversation_id):
             yield frame(name, data)
-    except Exception:
+    except Exception as exc:
+        if node := getattr(exc, "diabeque_node", None):
+            yield frame("agent.error", {"node": node, "error_type": type(exc).__name__})
         yield frame("stream.error", {"error": {"code": "INTERNAL", "message": "Lỗi xử lý, vui lòng thử lại.",
                                                "request_id": request_id, "retryable": True}, "stage": "generation"})
         raise
@@ -195,11 +203,21 @@ def chat_stream(req: ChatRequest) -> StreamingResponse:
                              headers={"X-Chat-Stream-Version": "1", "X-Accel-Buffering": "no", "Cache-Control": "no-cache"})
 
 
+@lru_cache
+def git_commit() -> str | None:
+    try:
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT.parent, capture_output=True, text=True, timeout=5, check=True)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip() or None
+
+
 @app.get("/api/v1/agents")
 def agents() -> dict:
     """Agent list and the graph in Mermaid, for the architecture page."""
     return {"agents": [{"id": a.value, "label": AGENT_LABELS[a]} for a in Agent],
-            "mermaid": agent_graph().get_graph().draw_mermaid()}
+            "mermaid": agent_graph().get_graph().draw_mermaid(), "repo_root": str(ROOT.parent), "commit": git_commit(),
+            "allow_simulation": settings().allow_simulation}
 
 
 @app.get("/api/v1/conversations/{conversation_id}/profile")

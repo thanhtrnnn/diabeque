@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     neo4j_user: str = "neo4j"
     neo4j_password: str
     embedding_model: str = "BAAI/bge-m3"
+    allow_simulation: bool = False  # ALLOW_SIMULATION=1 lets a request simulate an outage (demo only)
 
     @property
     def llm_base_url(self) -> str:
