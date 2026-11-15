@@ -117,4 +117,15 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Nhà máy (candy works): direction-contract palette, used only by src/components/factory. */
+  --color-candy-chocolate: #2a160c;
+  --color-candy-chocolate-2: #3b1f12;
+  --color-candy-cocoa: #5a3220;
+  --color-candy-strawberry: #ff6fa8;
+  --color-candy-lemon: #ffd23f;
+  --color-candy-mint: #6ad1e3;
+  --color-candy-sugar: #fff4e0;
+  --color-candy-ash: #8a7a70;
+  --shadow-candy-chip: 0 0.25rem 0.75rem color-mix(in oklch, #000 45%, transparent);
 }

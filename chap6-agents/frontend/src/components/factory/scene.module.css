@@ -1,0 +1,169 @@
+/* Candy-works diorama: canvas plus the HTML label layer. Fonts come from the page (next/font variables). */
+
+.stage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Lamp-lit chocolate room behind a transparent canvas. */
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 42%, var(--color-candy-cocoa) 0%, var(--color-candy-chocolate-2) 45%, var(--color-candy-chocolate) 100%);
+  font-family: var(--font-factory-text, "Be Vietnam Pro"), system-ui, sans-serif;
+}
+
+.stage ::selection {
+  color: var(--color-candy-chocolate);
+  background: var(--color-candy-lemon);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Lollipop stick from a chip that had to move up back down to its room. */
+.stem {
+  position: absolute;
+  width: var(--rule-fine);
+  transform: translateX(-50%);
+  border-radius: var(--radius-round);
+  background: var(--color-candy-sugar);
+  opacity: 0.7;
+}
+
+.label {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs) var(--space-2xs) var(--space-3xs) var(--space-3xs);
+  transform: translate(-50%, -100%);
+  border: var(--rule-fine) solid var(--color-candy-cocoa);
+  border-radius: var(--radius-round);
+  background: var(--color-candy-chocolate);
+  box-shadow: var(--shadow-candy-chip);
+  color: var(--color-candy-sugar);
+  font-family: var(--font-factory-display, "Baloo 2"), var(--font-factory-text, "Be Vietnam Pro"), sans-serif;
+  font-size: var(--type-step-16);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: border-color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
+}
+
+.label[data-below] {
+  transform: translate(-50%, 0);
+}
+
+.label:hover {
+  border-color: var(--color-candy-sugar);
+}
+
+.label:focus-visible {
+  outline: 3px solid var(--color-candy-lemon);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-candy-chip);
+}
+
+.label[data-selected] {
+  border-color: var(--color-candy-sugar);
+  background: var(--color-candy-chocolate-2);
+}
+
+.labelIcon {
+  width: var(--icon-size-control);
+  height: var(--icon-size-control);
+  color: var(--color-candy-ash);
+}
+
+.label[data-state="active"] { border-color: var(--color-candy-lemon); }
+.label[data-state="active"] .labelIcon { color: var(--color-candy-lemon); }
+.label[data-state="done"] .labelIcon { color: var(--color-candy-mint); }
+.label[data-state="fallback"] { border-color: var(--color-candy-lemon); border-style: dashed; }
+.label[data-state="fallback"] .labelIcon { color: var(--color-candy-lemon); }
+.label[data-state="error"] { border-color: var(--color-candy-strawberry); }
+.label[data-state="error"] .labelIcon { color: var(--color-candy-strawberry); }
+.label[data-state="skipped"] { color: var(--color-candy-ash); text-decoration: line-through; text-decoration-thickness: 2px; }
+
+.kind {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  color: var(--color-candy-mint);
+}
+
+.label[data-cellar] {
+  border-color: var(--color-candy-mint);
+}
+
+.strip {
+  position: absolute;
+  margin: 0;
+  transform: translate(0, var(--space-2xs));
+  color: var(--color-candy-sugar);
+  font-size: var(--type-step-14);
+  font-weight: 500;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px var(--color-candy-chocolate);
+  pointer-events: none;
+}
+
+.fallback {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: var(--space-sm);
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  padding: var(--space-xl) var(--spacing-page-gutter);
+  background: var(--color-candy-chocolate);
+  color: var(--color-candy-sugar);
+  font-family: var(--font-factory-text, "Be Vietnam Pro"), system-ui, sans-serif;
+}
+
+.fallbackTitle {
+  margin: 0;
+  font-family: var(--font-factory-display, "Baloo 2"), sans-serif;
+  font-size: var(--type-step-28);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.fallbackText {
+  max-width: 65ch;
+  margin: 0;
+  font-size: var(--type-step-16);
+  line-height: 1.6;
+}
+
+.fallbackLink {
+  color: var(--color-candy-lemon);
+  font-weight: 600;
+  text-underline-offset: 0.2em;
+}
+
+.fallbackLink:focus-visible {
+  outline: 3px solid var(--color-candy-lemon);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label { transition: none; }
+}

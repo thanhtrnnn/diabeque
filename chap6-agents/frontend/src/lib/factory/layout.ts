@@ -23,7 +23,11 @@ export type TrackId =
   | "in" | "main1" | "toIntake" | "toRisk" | "toAdvisor" | "toSafeOut" | "out"
   | "emergency" | "direct" | "toKnowledge" | "knowledgeOut" | "missing" | "loop";
 
-/** `via` holds the bends between the two stations, endpoints excluded. Back lanes: direct v=1, missing v=1.5, emergency v=2, loop v=3. */
+/**
+ * `via` holds the bends between the two stations, endpoints excluded. Back lanes: direct v=1, missing v=1.5,
+ * emergency v=2, loop v=3. The three back lanes drop into the exit check side by side (u 5.7 / 6 / 6.3) so their
+ * last legs never lie on top of each other.
+ */
 export const TRACKS: Record<TrackId, { from: StationId; to: StationId; via: Array<[number, number]> }> = {
   in: { from: "gate", to: "safety_in", via: [] },
   main1: { from: "safety_in", to: "orchestrator", via: [] },
@@ -32,8 +36,8 @@ export const TRACKS: Record<TrackId, { from: StationId; to: StationId; via: Arra
   toAdvisor: { from: "risk", to: "advisor", via: [] },
   toSafeOut: { from: "advisor", to: "safety_out", via: [] },
   out: { from: "safety_out", to: "exit", via: [] },
-  emergency: { from: "safety_in", to: "safety_out", via: [[1, 2], [6, 2]] },
-  direct: { from: "orchestrator", to: "safety_out", via: [[2, 1], [6, 1]] },
+  emergency: { from: "safety_in", to: "safety_out", via: [[1, 2], [6.3, 2], [6.3, 0.35]] },
+  direct: { from: "orchestrator", to: "safety_out", via: [[2, 1], [5.7, 1], [5.7, 0.35]] },
   toKnowledge: { from: "orchestrator", to: "knowledge", via: [[2, -2]] },
   knowledgeOut: { from: "knowledge", to: "safety_out", via: [[6, -2]] },
   missing: { from: "intake", to: "safety_out", via: [[3, 1.5], [6, 1.5]] },
