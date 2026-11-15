@@ -67,6 +67,8 @@ export function reduceChatStream(state: ChatStreamState, event: ChatStreamEvent)
       if (next.answerState || !step) fail("agent.step đến sau answer.started hoặc không hợp lệ.");
       return { ...next, steps: [...next.steps, step] };
     }
+    // Informational only: the `stream.error` that follows carries the message and the retry verdict.
+    case "agent.error": return next;
     case "sources.snapshot":
       if (next.answerState) fail("sources.snapshot đến sau answer.started.");
       if (payload.revision !== next.sourceRevision + 1) fail("sources.snapshot revision không liên tục.");

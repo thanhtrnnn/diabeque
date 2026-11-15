@@ -1,6 +1,7 @@
 export const CHAT_STREAM_EVENT_NAMES = [
   "stream.started",
   "agent.step",
+  "agent.error",
   "sources.snapshot",
   "answer.started",
   "answer.section.started",
@@ -72,10 +73,17 @@ export interface AnswerWarning {
   message: string;
 }
 
+/** Where in the repo an agent or tool lives: repo-relative POSIX path, 1-based line. */
+export interface CodeRef {
+  path: string;
+  line: number;
+}
+
 export interface AgentToolCall {
   name: string;
   args: Record<string, unknown>;
   result: unknown;
+  code?: CodeRef;
 }
 
 /** One agent's turn, as `agent.step` streams it and as `answer.agent.trace` replays it. */
@@ -85,6 +93,15 @@ export interface AgentStep {
   summary: string;
   tools: AgentToolCall[];
   ms: number;
+  code?: CodeRef;
+  /** What the agent fell back to when its model failed (`"rules"`, `"passages"`, ...); null when it did not. */
+  fallback?: string | null;
+}
+
+/** `agent.error`: the node that raised, sent just before `stream.error`. */
+export interface AgentErrorData {
+  node: string;
+  error_type: string;
 }
 
 export interface AgentProfileField {
@@ -140,6 +157,8 @@ export interface ChatRequest {
   message: string;
   /** The same id for every turn: the backend keeps the collected profile per conversation. */
   conversation_id: string;
+  /** Asks the backend to act as if the language model were down; honoured only when it allows simulation. */
+  simulate?: "llm_down";
 }
 
 export interface ChatStreamEnvelope {
@@ -260,9 +279,16 @@ function parseWarnings(value: unknown): AnswerWarning[] | null {
   return value.every((item) => record(item) && text(item.code) && text(item.message)) ? value as AnswerWarning[] : null;
 }
 
+/** Optional field: a malformed ref is dropped, never fatal. */
+export function parseCodeRef(value: unknown): CodeRef | undefined {
+  if (!record(value) || !text(value.path) || !Number.isSafeInteger(value.line) || Number(value.line) < 1) return undefined;
+  return { path: value.path, line: value.line as number };
+}
+
 function parseToolCall(value: unknown): AgentToolCall | null {
   if (!record(value) || !text(value.name) || !record(value.args) || !("result" in value)) return null;
-  return { name: value.name, args: value.args, result: value.result };
+  const code = parseCodeRef(value.code);
+  return { name: value.name, args: value.args, result: value.result, ...(code && { code }) };
 }
 
 export function parseAgentStep(value: unknown): AgentStep | null {
@@ -270,7 +296,13 @@ export function parseAgentStep(value: unknown): AgentStep | null {
   if (typeof value.ms !== "number" || !Number.isFinite(value.ms) || value.ms < 0) return null;
   const tools = value.tools.map(parseToolCall);
   if (tools.some((tool) => tool === null)) return null;
-  return { agent: value.agent, label: value.label, summary: value.summary, tools: tools as AgentToolCall[], ms: value.ms };
+  const code = parseCodeRef(value.code);
+  const fallback = value.fallback;
+  return {
+    agent: value.agent, label: value.label, summary: value.summary, tools: tools as AgentToolCall[], ms: value.ms,
+    ...(code && { code }),
+    ...((fallback === null || text(fallback)) && { fallback }),
+  };
 }
 
 function parseProbs(value: unknown): Record<string, number> | null {
@@ -344,6 +376,7 @@ function validateEventData(event: ChatStreamEventName, data: Record<string, unkn
   switch (event) {
     case "stream.started": return true;
     case "agent.step": return parseAgentStep(data) !== null && (data.node === undefined || text(data.node));
+    case "agent.error": return text(data.node) && text(data.error_type);
     case "sources.snapshot": return Number.isSafeInteger(data.revision) && Number(data.revision) > 0 && parseSources(data.sources) !== null;
     case "answer.started": return isAnswerState(data.state) && Array.isArray(data.section_order) && data.section_order.every((kind) => sectionKinds.has(kind));
     case "answer.section.started": return isSectionId(data.section_id, data.kind) && text(data.title) && Number.isSafeInteger(data.order) && data.section_id === `${data.kind as string}-${data.order as number}`;

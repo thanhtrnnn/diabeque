@@ -269,5 +269,11 @@ export function errorEvents(retryable = true): StreamEvent[] {
   ];
 }
 
+/** A node raised: the backend names it in `agent.error`, then sends the usual `stream.error`. */
+export function agentErrorEvents(node = "knowledge"): StreamEvent[] {
+  const [started, error] = errorEvents(true);
+  return [started, ["agent.error", { node, error_type: "RuntimeError" }], error];
+}
+
 export const sse = (events: StreamEvent[]) =>
   new Response(frames(events), { headers: { "Content-Type": "text/event-stream", "X-Chat-Stream-Version": "1" } });

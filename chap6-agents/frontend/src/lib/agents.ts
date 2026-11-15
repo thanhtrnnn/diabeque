@@ -21,6 +21,12 @@ export interface AgentEntry {
 export interface AgentsResponse {
   agents: AgentEntry[];
   mermaid: string;
+  /** Absolute path of the repo the backend runs from; `CodeRef.path` is relative to it. */
+  repo_root?: string;
+  /** `git rev-parse HEAD` of that repo, null when git is unavailable. */
+  commit?: string | null;
+  /** Whether `ChatRequest.simulate` is honoured. */
+  allow_simulation?: boolean;
 }
 
 export interface AgentDetail {

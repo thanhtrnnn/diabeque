@@ -31,6 +31,18 @@ describe("chat stream BFF route", () => {
     expect(headers.has("cookie")).toBe(false);
   });
 
+  it("forwards simulate only when it is llm_down", async () => {
+    const upstream = vi.fn().mockImplementation(async () => new Response(frames(answeredEvents()), { headers: { "Content-Type": "text/event-stream" } }));
+    vi.stubGlobal("fetch", upstream);
+
+    await POST(request({ message: "đái tháo đường", conversation_id: "c-1", simulate: "llm_down" }));
+    await POST(request({ message: "đái tháo đường", conversation_id: "c-1", simulate: "x" }));
+
+    const bodies = upstream.mock.calls.map(([, init]) => JSON.parse(String((init as RequestInit).body)));
+    expect(bodies[0]).toEqual({ message: "đái tháo đường", conversation_id: "c-1", simulate: "llm_down" });
+    expect(bodies[1]).toEqual({ message: "đái tháo đường", conversation_id: "c-1" });
+  });
+
   it.each([
     ["invalid JSON", "{"],
     ["a one-character message", { message: "a", conversation_id: "c" }],

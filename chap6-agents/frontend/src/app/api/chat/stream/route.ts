@@ -14,10 +14,10 @@ function failure(status: number, code: string, message: string) {
 
 function parseRequest(body: unknown): ChatRequest | null {
   if (typeof body !== "object" || body === null) return null;
-  const { message, conversation_id: conversationId } = body as Record<string, unknown>;
+  const { message, conversation_id: conversationId, simulate } = body as Record<string, unknown>;
   if (typeof message !== "string" || message.trim().length < MIN_MESSAGE_LENGTH || message.length > MAX_MESSAGE_LENGTH) return null;
   if (typeof conversationId !== "string" || !conversationId) return null;
-  return { message: message.trim(), conversation_id: conversationId };
+  return { message: message.trim(), conversation_id: conversationId, ...(simulate === "llm_down" && { simulate }) };
 }
 
 export async function POST(request: Request) {

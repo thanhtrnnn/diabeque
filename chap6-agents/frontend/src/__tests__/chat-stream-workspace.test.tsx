@@ -7,6 +7,7 @@ import {
   DISCLAIMER_TEXT,
   EMERGENCY_TEXT,
   QUESTION_TEXT,
+  agentErrorEvents,
   answeredEvents,
   emergencyEvents,
   errorEvents,
@@ -285,6 +286,18 @@ describe("ChatWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(await screen.findByRole("heading", { name: "Trả lời" })).toBeVisible();
     expect(bodies[1].message).toBe(bodies[0].message);
+  });
+
+  it("treats agent.error followed by stream.error like a plain stream error", async () => {
+    const bodies = stubChat(() => sse(agentErrorEvents()), () => sse(answeredEvents()));
+    render(<ChatWorkspace />);
+    ask("Triệu chứng đái tháo đường?");
+
+    expect(await screen.findByText("Lỗi xử lý, vui lòng thử lại.")).toBeVisible();
+    expect(screen.queryByText("Luồng trả lời không đúng hợp đồng SSE.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    expect(await screen.findByRole("heading", { name: "Trả lời" })).toBeVisible();
+    expect(bodies).toHaveLength(2);
   });
 
   it("withholds the retry button when the backend says another attempt cannot help", async () => {

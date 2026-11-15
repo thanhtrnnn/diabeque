@@ -10,6 +10,7 @@ import {
   DISCLAIMER,
   SECTION_KINDS,
   parseAgentInfo,
+  parseAgentStep,
   parseChatStreamAnswer,
   parseChatStreamEnvelope,
 } from "@/lib/chat-stream-contract";
@@ -40,12 +41,13 @@ function finalPayload(events = answeredEvents()) {
 }
 
 describe("SSE contract against the backend source", () => {
-  it.skipIf(!present)("lists the events of backend schema.SSE_EVENTS plus agent.step, and nothing the backend never emits", () => {
+  it.skipIf(!present)("lists the events of backend schema.SSE_EVENTS plus agent.step and agent.error, and nothing the backend never emits", () => {
     const block = /SSE_EVENTS\s*=\s*\(([^)]*)\)/.exec(read(SCHEMA))?.[1] ?? "";
     const schemaEvents = names(block, /"([^"]+)"/g);
     const emitted = new Set([...names(read(MAIN), /yield "([a-z.]+)",/g), ...names(read(MAIN), /frame\("([a-z.]+)"/g)]);
     expect(emitted.has("agent.step")).toBe(true);
-    expect([...CHAT_STREAM_EVENT_NAMES].sort()).toEqual([...new Set([...schemaEvents, "agent.step"])].sort());
+    expect(emitted.has("agent.error")).toBe(true);
+    expect([...CHAT_STREAM_EVENT_NAMES].sort()).toEqual([...new Set([...schemaEvents, "agent.step", "agent.error"])].sort());
     for (const event of emitted) expect(CHAT_STREAM_EVENT_NAMES).toContain(event);
   });
 
@@ -188,6 +190,45 @@ describe("envelope", () => {
     expect(() => parseChatStreamEnvelope("agent.step", "1", { ...envelope, data: { ...step, label: "" } })).toThrow(ChatStreamProtocolError);
     expect(() => parseChatStreamEnvelope("agent.step", "1", { ...envelope, data: { ...step, ms: -1 } })).toThrow(ChatStreamProtocolError);
     expect(() => parseChatStreamEnvelope("agent.step", "1", { ...envelope, data: { ...step, tools: [{ name: "x", result: 1 }] } })).toThrow(ChatStreamProtocolError);
+  });
+
+  it("keeps a valid code ref and fallback on a step and its tools, and still parses a step without them", () => {
+    const step = {
+      node: "knowledge", agent: "knowledge", label: "Tra cứu tri thức", summary: "3 đoạn", ms: 12, fallback: "passages",
+      code: { path: "chap6-agents/backend/app/agents/nodes.py", line: 120 },
+      tools: [{ name: "hybrid_search", args: {}, result: [], code: { path: "chap6-agents/backend/app/tools.py", line: 7 } }],
+    };
+    expect(parseAgentStep(step)).toMatchObject({
+      fallback: "passages", code: { path: "chap6-agents/backend/app/agents/nodes.py", line: 120 },
+      tools: [{ name: "hybrid_search", code: { path: "chap6-agents/backend/app/tools.py", line: 7 } }],
+    });
+    expect(parseAgentStep({ ...step, fallback: null })?.fallback).toBeNull();
+    const bare = parseAgentStep({ agent: "intake", label: "Thu thập thông tin", summary: "", ms: 1, tools: [] });
+    expect(bare).not.toBeNull();
+    expect(bare).not.toHaveProperty("code");
+    expect(bare).not.toHaveProperty("fallback");
+  });
+
+  it("drops a malformed code ref or fallback instead of rejecting the step", () => {
+    const base = { agent: "risk", label: "Dự đoán nguy cơ", summary: "", ms: 3, tools: [] };
+    for (const code of [{ path: 3, line: 1 }, { path: "a.py", line: 0 }, { path: "a.py", line: 1.5 }, { path: "", line: 2 }, "a.py:1"]) {
+      const step = parseAgentStep({ ...base, code, tools: [{ name: "x", args: {}, result: null, code }] });
+      expect(step).not.toBeNull();
+      expect(step).not.toHaveProperty("code");
+      expect(step?.tools[0]).not.toHaveProperty("code");
+    }
+    expect(parseAgentStep({ ...base, fallback: 7 })).not.toHaveProperty("fallback");
+  });
+
+  it("accepts a step from an unknown agent with an unknown tool", () => {
+    const step = { agent: "agent_moi", label: "Mới", summary: "", ms: 0, tools: [{ name: "cong_cu_la", args: {}, result: 1 }] };
+    expect(parseChatStreamEnvelope("agent.step", "1", { ...envelope, data: step }).event).toBe("agent.step");
+  });
+
+  it("accepts agent.error with a node and an error type, and rejects one without them", () => {
+    expect(parseChatStreamEnvelope("agent.error", "1", { ...envelope, data: { node: "knowledge", error_type: "RuntimeError" } }).event).toBe("agent.error");
+    expect(() => parseChatStreamEnvelope("agent.error", "1", { ...envelope, data: { node: "knowledge" } })).toThrow(ChatStreamProtocolError);
+    expect(() => parseChatStreamEnvelope("agent.error", "1", { ...envelope, data: { node: "", error_type: "E" } })).toThrow(ChatStreamProtocolError);
   });
 
   it("requires a section id of the kind-order form that agrees with kind and order", () => {
