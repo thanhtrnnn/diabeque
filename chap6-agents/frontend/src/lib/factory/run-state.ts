@@ -1,6 +1,7 @@
 /** What the factory shows for one run: a pure reducer over the events the runner hook dispatches. */
 import { AGENT_IDS, AGENT_LABELS, type AgentId } from "@/lib/agents";
 import type { AgentStep } from "@/lib/chat-stream-contract";
+import { fallbackPhrase } from "./cast";
 import { STATIONS, type StationId, type TrackId } from "./layout";
 import { pairTracks, routeFor } from "./route";
 
@@ -64,7 +65,7 @@ function withLog(state: RunState, entry: Omit<LogEntry, "turn">, caption: string
 function onStep(state: RunState, step: AgentStep): RunState {
   const label = isAgent(step.agent) ? AGENT_LABELS[step.agent] : step.label || step.agent;
   const fellBack = typeof step.fallback === "string" && step.fallback.length > 0;
-  const text = `${label}: ${step.summary || "đã xử lý"}${fellBack ? ` (dự phòng: ${step.fallback})` : ""}`;
+  const text = `${label}: ${step.summary || "đã xử lý"}${fellBack ? ` (${fallbackPhrase(step.fallback as string)})` : ""}`;
   if (!isAgent(step.agent)) {
     return withLog(state, { station: null, level: "info", text: `Bước không rõ trạm (${step.agent}). ${text}` }, text);
   }

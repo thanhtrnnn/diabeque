@@ -6,7 +6,7 @@
  * Live turns go through the chat stream; recorded scenarios replay real runs from `scenarios.json`.
  */
 import dynamic from "next/dynamic";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { fetchAgents } from "@/lib/api-client";
 import { STATIONS, TOOL_STATION, type StationId } from "@/lib/factory/layout";
@@ -33,14 +33,26 @@ export function FactoryView({ scenarios = SCENARIOS }: { scenarios?: Scenario[] 
   const [selection, setSelection] = useState<SheetSelection | null>(null);
   const [llmDown, setLlmDown] = useState(false);
   const [logOpen, setLogOpen] = useState(true);
+  /** From 48rem the sheet docks over the run-log column (below that it is a bottom sheet). */
+  const docked = useMediaQuery("(min-width: 48rem)");
+  /** The control that opened the sheet, so closing it puts focus back there. */
+  const opener = useRef<HTMLElement | null>(null);
 
   const select = useCallback((id: string) => {
-    if (isStation(id)) setSelection({ station: id, tool: null });
-    else if (TOOL_STATION[id]) setSelection({ station: TOOL_STATION[id], tool: id });
+    const station = isStation(id) ? id : TOOL_STATION[id];
+    if (!station) return;
+    const active = document.activeElement;
+    // A canvas click leaves focus on <body>; keep the last real opener then.
+    if (active instanceof HTMLElement && active !== document.body && !active.closest("[role=dialog]")) opener.current = active;
+    setSelection({ station, tool: isStation(id) ? null : id });
   }, []);
 
+  const covered = selection !== null && docked;
+
   return (
-    <div className={styles.factory} data-log={logOpen ? "open" : "closed"}>
+    // While the sheet is docked, the column is open at its width even if the log was collapsed, so the sheet never
+    // reaches over the rooms.
+    <div className={styles.factory} data-log={logOpen || covered ? "open" : "closed"}>
       <FactoryHud
         run={run}
         scenarios={scenarios}
@@ -53,13 +65,14 @@ export function FactoryView({ scenarios = SCENARIOS }: { scenarios?: Scenario[] 
         <FactoryScene state={run.state} selected={selection?.station ?? null} onSelect={select} reducedMotion={reducedMotion} />
       </div>
       <FactoryTicker caption={run.state.caption} turn={run.state.turn} busy={run.busy} />
-      <FactoryLog log={run.state.log} open={logOpen} onToggle={() => setLogOpen((open) => !open)} onSelect={select} />
+      <FactoryLog log={run.state.log} open={logOpen} onToggle={() => setLogOpen((open) => !open)} onSelect={select} inert={covered} />
       <CharacterSheet
         selection={selection}
         state={run.state}
         repo={repo}
         onSelectTool={(tool) => setSelection((current) => current && { ...current, tool })}
         onClose={() => setSelection(null)}
+        onReturnFocus={() => opener.current?.isConnected && opener.current.focus()}
       />
     </div>
   );

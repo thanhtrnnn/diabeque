@@ -11,7 +11,7 @@ import { CloudIcon, CodeIcon, GithubLogoIcon, WrenchIcon, XIcon } from "@phospho
 import { formatDuration, traceJson } from "@/lib/agent-trace";
 import { AGENT_IDS, AGENT_LABELS, type AgentId } from "@/lib/agents";
 import type { AgentToolCall, CodeRef } from "@/lib/chat-stream-contract";
-import { CAST, PROP_NOTES } from "@/lib/factory/cast";
+import { CAST, PROP_NOTES, fallbackPhrase } from "@/lib/factory/cast";
 import type { StationId } from "@/lib/factory/layout";
 import { githubLink, vscodeLink } from "@/lib/factory/links";
 import type { RunState, StationState } from "@/lib/factory/run-state";
@@ -29,6 +29,8 @@ interface SheetProps {
   repo: { root: string | undefined; commit: string | null };
   onSelectTool: (tool: string | null) => void;
   onClose: () => void;
+  /** Where focus goes when the sheet closes: the chip, log entry or button that opened it. */
+  onReturnFocus: () => void;
 }
 
 const STATE_TEXT: Record<StationState, string> = {
@@ -38,7 +40,7 @@ const agentIds = new Set<string>(AGENT_IDS);
 const isAgent = (id: StationId): id is AgentId => agentIds.has(id);
 const fileOf = (ref: CodeRef) => `${ref.path.split("/").at(-1)}:${ref.line}`;
 
-export function CharacterSheet({ selection, state, repo, onSelectTool, onClose }: SheetProps) {
+export function CharacterSheet({ selection, state, repo, onSelectTool, onClose, onReturnFocus }: SheetProps) {
   const id = selection?.station ?? null;
   return (
     <Dialog.Root open={id !== null} onOpenChange={(open) => !open && onClose()} modal={false}>
@@ -46,6 +48,12 @@ export function CharacterSheet({ selection, state, repo, onSelectTool, onClose }
         className={styles.sheet}
         // Picking another worker in the scene swaps the sheet instead of closing it.
         onInteractOutside={(event) => event.preventDefault()}
+        // No Dialog.Trigger here (the openers live in the scene and the log), and non-modal Radix only refocuses
+        // its trigger, so hand focus back to whatever opened the sheet ourselves.
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          onReturnFocus();
+        }}
       >
         {id && (isAgent(id) ? (
           <AgentSheet id={id} tool={selection!.tool} state={state} repo={repo} onSelectTool={onSelectTool} />
@@ -134,7 +142,7 @@ function AgentSheet({ id, tool, state, repo, onSelectTool }: {
           <>
             <p className={styles.sheetText}>
               <strong>{step.summary || "đã xử lý"}</strong>
-              <span className={styles.sheetMeta}> · {formatDuration(step.ms)}{step.fallback ? ` · dự phòng: ${step.fallback}` : ""}</span>
+              <span className={styles.sheetMeta}> · {formatDuration(step.ms)}{step.fallback ? ` · ${fallbackPhrase(step.fallback)}` : ""}</span>
             </p>
             {step.code && <CodeLinks code={step.code} repo={repo} subject={AGENT_LABELS[id]} />}
             {tool && shown.length === 0 && <p className={styles.sheetText}>Lần chạy gần nhất không gọi <code>{tool}</code>.</p>}

@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { formatDuration } from "@/lib/agent-trace";
 import { AGENT_LABELS, type AgentId } from "@/lib/agents";
+import { fallbackPhrase } from "@/lib/factory/cast";
 import type { LogEntry } from "@/lib/factory/run-state";
 import type { Scenario } from "@/lib/factory/scenarios";
 import type { FactoryRun } from "@/lib/factory/use-factory-run";
@@ -126,9 +127,11 @@ interface LogProps {
   open: boolean;
   onToggle: () => void;
   onSelect: (id: string) => void;
+  /** The character sheet covers the column: its buttons leave the tab order. */
+  inert?: boolean;
 }
 
-export function FactoryLog({ log, open, onToggle, onSelect }: LogProps) {
+export function FactoryLog({ log, open, onToggle, onSelect, inert }: LogProps) {
   const listRef = useRef<HTMLOListElement>(null);
 
   useEffect(() => {
@@ -137,7 +140,7 @@ export function FactoryLog({ log, open, onToggle, onSelect }: LogProps) {
   }, [log.length]);
 
   return (
-    <section className={styles.log} aria-label="Vết chạy" data-open={open ? "" : undefined}>
+    <section className={styles.log} aria-label="Vết chạy" data-open={open ? "" : undefined} inert={inert}>
       <div className={styles.logHead}>
         {open && <h2 className={styles.logTitle}>Vết chạy</h2>}
         <button type="button" className={styles.logToggle} onClick={onToggle} aria-expanded={open} aria-label={open ? "Thu gọn vết chạy" : "Mở vết chạy"}>
@@ -166,6 +169,8 @@ export function FactoryLog({ log, open, onToggle, onSelect }: LogProps) {
   );
 }
 
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 function StepEntry({ entry, onSelect }: { entry: LogEntry & { station: AgentId }; onSelect: (id: string) => void }) {
   const step = entry.step!;
   return (
@@ -180,7 +185,7 @@ function StepEntry({ entry, onSelect }: { entry: LogEntry & { station: AgentId }
       {step.fallback && (
         <span className={styles.badge} data-tone="fallback">
           <BookOpenIcon weight="fill" aria-hidden />
-          Dự phòng: {step.fallback}
+          {capitalize(fallbackPhrase(step.fallback))}
         </span>
       )}
     </>

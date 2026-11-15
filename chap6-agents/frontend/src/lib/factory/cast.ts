@@ -31,14 +31,14 @@ export const CAST: Record<AgentId, CastMember> = {
     role: "Đọc ý định của tin nhắn (hỏi kiến thức, đánh giá nguy cơ, chào hỏi, ngoài phạm vi) rồi kéo cần gạt để ray đổi sang đúng nhánh.",
     llm: true,
     tools: [],
-    fallback: "LLM sập thì lật sổ luật: nhận ý định bằng từ khóa, bước được gắn cờ dự phòng \"rules\".",
+    fallback: "LLM sập thì lật sổ luật: nhận ý định bằng từ khóa, bước được gắn nhãn \"dự phòng: luật thay LLM\".",
   },
   intake: {
     name: "Chú Sổ Tay",
     role: "Trích thông tin sức khỏe từ tin nhắn, ghép vào hồ sơ đã lưu của hội thoại và ghi lên bảng kẹp x/7 trường. Thiếu trường thì hỏi tối đa 3 câu và dừng lượt, lượt sau làm tiếp.",
     llm: true,
     tools: ["compute_bmi", "validate_profile"],
-    fallback: "LLM sập thì trích bằng luật (regex tuổi, cân nặng, chiều cao, có/không), cờ dự phòng \"rules\".",
+    fallback: "LLM sập thì trích bằng luật (regex tuổi, cân nặng, chiều cao, có/không), gắn nhãn \"dự phòng: luật thay LLM\".",
   },
   risk: {
     name: "Cụ Cân Đong",
@@ -52,14 +52,14 @@ export const CAST: Record<AgentId, CastMember> = {
     role: "Đội mũ đèn đi thang máy xuống hầm tri thức Neo4j: truy xuất vector, BM25 và đồ thị, viết câu trả lời rồi chỉ giữ ý có trích dẫn hợp lệ.",
     llm: true,
     tools: ["search_knowledge", "search_passages"],
-    fallback: "LLM sập thì trả 3 đoạn tài liệu truy xuất được, mỗi đoạn kèm trích dẫn, cờ dự phòng \"passages\". Neo4j lỗi thì báo lỗi tool.",
+    fallback: "LLM sập thì trả 3 đoạn tài liệu truy xuất được, mỗi đoạn kèm trích dẫn, gắn nhãn \"dự phòng: đoạn tài liệu\". Neo4j lỗi thì báo lỗi tool.",
   },
   advisor: {
     name: "Chị Pha Chế",
     role: "Rót lời khuyên hợp với hồ sơ và kết quả ước lượng, chỉ từ các đoạn nguồn lấy theo yếu tố nguy cơ của người đó, mỗi ý một trích dẫn.",
     llm: true,
     tools: ["get_recommendations"],
-    fallback: "LLM sập thì liệt kê khuyến nghị lấy từ dữ kiện đồ thị tri thức, kèm trích dẫn đoạn gốc, cờ dự phòng \"graph_facts\".",
+    fallback: "LLM sập thì liệt kê khuyến nghị lấy từ dữ kiện đồ thị tri thức, kèm trích dẫn đoạn gốc, gắn nhãn \"dự phòng: khuyến nghị từ đồ thị\".",
   },
   safety_out: {
     name: "Ông Soát Vé",
@@ -69,6 +69,18 @@ export const CAST: Record<AgentId, CastMember> = {
     fallback: "Chỉ chạy luật nên không phụ thuộc LLM. Phần dự phòng của các phòng trước cũng đi qua đây và được lọc như mọi phần khác.",
   },
 };
+
+/** Vietnamese names for the backend's `fallback` flags (`nodes.py`); the raw flag never reaches the screen. */
+const FALLBACK_LABELS: Record<string, string> = {
+  rules: "luật thay LLM",
+  passages: "đoạn tài liệu",
+  graph_facts: "khuyến nghị từ đồ thị",
+};
+
+/** "dự phòng: luật thay LLM" for `rules`, and so on; a flag this build does not know yet reads as a plain "dự phòng". */
+export function fallbackPhrase(flag: string): string {
+  return Object.hasOwn(FALLBACK_LABELS, flag) ? `dự phòng: ${FALLBACK_LABELS[flag]}` : "dự phòng";
+}
 
 /** The three props are not agents: a sentence each for their sheet. */
 export const PROP_NOTES: Record<Exclude<StationId, AgentId>, { name: string; note: string }> = {

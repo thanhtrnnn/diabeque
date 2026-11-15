@@ -44,6 +44,19 @@ const SCENARIOS: Scenario[] = [
     }],
   },
   {
+    id: "llm-sap", label: "LLM sập",
+    turns: [{
+      message: "HbA1c là gì?",
+      steps: [
+        step("safety_in", "An toàn (vào)", "Không có dấu hiệu khẩn cấp"),
+        step("orchestrator", "Điều phối", "Ý định: knowledge (luật dự phòng (LLMUnavailable))", { fallback: "rules" }),
+        step("knowledge", "Tra cứu tri thức", "Dự phòng: 5 đoạn tài liệu, không dùng LLM", { fallback: "passages" }),
+        step("safety_out", "An toàn (ra)", "Đã kiểm 1 phần do LLM viết", { fallback: "flag_moi" }),
+      ],
+      sections: [{ kind: "conclusion", title: "Đoạn tài liệu liên quan", text: "..." }],
+    }],
+  },
+  {
     id: "kien-thuc", label: "Hỏi kiến thức",
     turns: [{
       message: "HbA1c là gì?",
@@ -182,11 +195,72 @@ describe("FactoryView", () => {
     expect(screen.getByRole("button", { name: /Bước tiếp/ })).toBeInTheDocument();
   });
 
+  it("hands focus back to the control that opened the sheet when Esc closes it", async () => {
+    stubAgents({});
+    render(<FactoryView scenarios={SCENARIOS} />);
+    await screen.findByTestId("fake-scene");
+    const opener = screen.getByRole("button", { name: "trạm risk" });
+    await userEvent.click(opener);
+    await screen.findByRole("dialog", { name: /Cụ Cân Đong/ });
+
+    await userEvent.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(opener).toHaveFocus();
+  });
+
+  it("names fallback flags in Vietnamese in the log, caption and sheet, never the raw flag", async () => {
+    stubAgents({});
+    render(<FactoryView scenarios={SCENARIOS} />);
+    await screen.findByTestId("fake-scene");
+    await userEvent.click(screen.getByRole("button", { name: "LLM sập" }));
+    const caption = screen.getByRole("status", { name: "Chú thích bước" });
+    await waitFor(() => expect(caption).toHaveTextContent("(dự phòng: luật thay LLM)"), { timeout: 4000 });
+    await waitFor(() => expect(caption).toHaveTextContent("(dự phòng: đoạn tài liệu)"), { timeout: 4000 });
+    await waitFor(() => expect(logTexts().some((t) => t.includes("Đã kiểm 1 phần"))).toBe(true), { timeout: 6000 });
+
+    const log = screen.getByRole("region", { name: "Vết chạy" });
+    expect(within(log).getByText("Dự phòng: luật thay LLM")).toBeInTheDocument();
+    expect(within(log).getByText("Dự phòng: đoạn tài liệu")).toBeInTheDocument();
+    // A flag this build does not know reads as a plain "Dự phòng".
+    expect(within(log).getByText("Dự phòng")).toBeInTheDocument();
+    expect(log.textContent).not.toMatch(/rules|passages|flag_moi/);
+
+    await userEvent.click(screen.getByRole("button", { name: "trạm orchestrator" }));
+    const sheet = await screen.findByRole("dialog", { name: /Cô Bẻ Ghi/ });
+    expect(within(sheet).getAllByText(/dự phòng: luật thay LLM/).length).toBeGreaterThan(0);
+    expect(sheet.textContent).not.toMatch(/"rules"|"passages"|"graph_facts"/);
+  });
+
+  it("takes the covered log out of the tab order and keeps its column open while the sheet is docked", async () => {
+    stubAgents({});
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("min-width"), media: query, onchange: null,
+      addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false,
+    }));
+    const { container } = render(<FactoryView scenarios={SCENARIOS} />);
+    await screen.findByTestId("fake-scene");
+    const root = container.firstElementChild as HTMLElement;
+    await userEvent.click(screen.getByRole("button", { name: "Thu gọn vết chạy" }));
+    expect(root).toHaveAttribute("data-log", "closed");
+
+    await userEvent.click(screen.getByRole("button", { name: "trạm risk" }));
+    await screen.findByRole("dialog", { name: /Cụ Cân Đong/ });
+    expect(root).toHaveAttribute("data-log", "open");
+    expect(screen.getByRole("region", { name: "Vết chạy", hidden: true })).toHaveAttribute("inert");
+
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(root).toHaveAttribute("data-log", "closed");
+    expect(screen.getByRole("region", { name: "Vết chạy" })).not.toHaveAttribute("inert");
+  });
+
   it("falls back to a link to the architecture page when the browser has no WebGL", async () => {
     sceneMode.fake = false;
     stubAgents({});
     render(<FactoryView scenarios={SCENARIOS} />);
-    expect(await screen.findByText(/Trình duyệt không hỗ trợ WebGL/)).toBeInTheDocument();
+    // The real scene module (three.js) loads through next/dynamic; give a cold import room on a busy runner.
+    expect(await screen.findByText(/Trình duyệt không hỗ trợ WebGL/, undefined, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Kiến trúc/ })).toHaveAttribute("href", "/app/kien-truc");
     // The HUD stays usable around the fallback panel.
     expect(screen.getByRole("textbox", { name: /Câu hỏi/ })).toBeInTheDocument();
