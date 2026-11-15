@@ -3,6 +3,7 @@
 import json
 import math
 import sqlite3
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -120,4 +121,5 @@ def search_knowledge(question: str, topic: str | None = None) -> dict:
 
 
 FUNCTIONS = [compute_bmi, validate_profile, predict_diabetes_risk, predict_diabetes_type, get_recommendations, search_knowledge]
+BY_NAME: dict[str, Callable] = {f.__name__: f for f in FUNCTIONS}
 LC_TOOLS = [StructuredTool.from_function(f) for f in FUNCTIONS]

@@ -32,12 +32,26 @@ AGENT_LABELS: dict[Agent, str] = {
 }
 
 
+class CodeRef(TypedDict):
+    path: str   # relative to the repo root, POSIX separators
+    line: int   # the `def` line
+
+
+class ToolCall(TypedDict, total=False):
+    name: str
+    args: dict[str, Any]
+    result: Any
+    code: CodeRef   # absent for names that are not in tools.BY_NAME
+
+
 class Step(TypedDict, total=False):
     agent: str
     label: str
     summary: str
-    tools: list[dict[str, Any]]
+    tools: list[ToolCall]
     ms: int
+    code: CodeRef           # where the node function is defined
+    fallback: str | None    # "rules" when the LLM path failed and regex rules answered instead
 
 
 class Section(TypedDict):

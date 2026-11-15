@@ -9,21 +9,27 @@ from pydantic import BaseModel, Field, field_validator
 
 from .. import answer as gen
 from . import fields, safety, tools
+from .coderef import code_ref
 from .llm import structured
-from .state import AGENT_LABELS, Agent, Intent, SessionState, Step
+from .state import AGENT_LABELS, Agent, Intent, SessionState, Step, ToolCall
 
 # ------------------------------------------------------------------ helpers
 
 
 def traced(agent: Agent) -> Callable:
-    """Time the node and append its step to the turn trace."""
+    """Time the node and append its step to the turn trace.
 
-    def wrap(fn: Callable[[SessionState], tuple[dict, str, list[dict]]]):
+    A node returns (update, summary, calls), plus a fourth item, "rules", when its LLM path failed and rules answered."""
+
+    def wrap(fn: Callable[[SessionState], tuple]):
+        code = code_ref(fn)
+
         def node(state: SessionState) -> dict:
             t0 = time.perf_counter()
-            update, summary, calls = fn(state)
+            update, summary, calls, *rest = fn(state)
             step: Step = {"agent": agent.value, "label": AGENT_LABELS[agent], "summary": summary, "tools": calls,
-                          "ms": round((time.perf_counter() - t0) * 1000)}
+                          "ms": round((time.perf_counter() - t0) * 1000), "code": code,
+                          "fallback": rest[0] if rest else None}
             return {**update, "trace": [*state.get("trace", []), step]}
 
         node.__name__ = agent.value
@@ -32,8 +38,11 @@ def traced(agent: Agent) -> Callable:
     return wrap
 
 
-def call(name: str, args: dict, result) -> dict:
-    return {"name": name, "args": args, "result": result}
+def call(name: str, args: dict, result) -> ToolCall:
+    record: ToolCall = {"name": name, "args": args, "result": result}
+    if (fn := tools.BY_NAME.get(name)) is not None:
+        record["code"] = code_ref(fn)
+    return record
 
 
 def history_text(state: SessionState, turns: int = 3) -> str:
@@ -114,17 +123,18 @@ OUT_OF_SCOPE_TEXT = "Câu hỏi nằm ngoài phạm vi của trợ lý. Tôi ch�
 def orchestrator(state: SessionState):
     status = "đang chờ người dùng trả lời câu hỏi thu thập thông tin" if state.get("awaiting_intake") else "bình thường"
     prompt = ORCHESTRATOR_PROMPT.format(history=history_text(state), status=status, message=state["message"])
+    fallback = None
     try:
         decision = structured(IntentDecision).invoke(prompt)
         intent, how = decision.intent, f"LLM: {decision.reason}"
     except Exception as e:  # endpoint down or malformed tool call: rules keep the system usable
-        intent, how = fallback_intent(state), f"luật dự phòng ({type(e).__name__})"
+        intent, how, fallback = fallback_intent(state), f"luật dự phòng ({type(e).__name__})", "rules"
     update: dict = {"intent": intent}
     if intent == Intent.GREETING:
         update["sections"] = [{"kind": "notice", "title": "Giới thiệu", "text": GREETING_TEXT}]
     elif intent == Intent.OUT_OF_SCOPE:
         update["sections"] = [{"kind": "notice", "title": "Ngoài phạm vi", "text": OUT_OF_SCOPE_TEXT}]
-    return update, f"Ý định: {intent} ({how})", []
+    return update, f"Ý định: {intent} ({how})", [], fallback
 
 
 # ------------------------------------------------------------------ intake
@@ -273,10 +283,11 @@ def to_features(x: IntakeExtraction) -> tuple[dict[str, float], list[dict]]:
 def intake(state: SessionState):
     asked = [fields.QUESTIONS[f] for f in state.get("asked", [])[-fields.ASK_PER_TURN:]] if state.get("awaiting_intake") else []
     prompt = INTAKE_PROMPT.format(asked=" ".join(asked) or "(không)", message=state["message"])
+    fallback = None
     try:
         x = structured(IntakeExtraction).invoke(prompt)
     except Exception as e:
-        x, note = IntakeExtraction(), f"trích xuất lỗi ({type(e).__name__})"
+        x, note, fallback = IntakeExtraction(), f"trích xuất lỗi ({type(e).__name__})", "rules"
     else:
         note = ""
     x = merge(x, rule_extract(state["message"]))
@@ -296,7 +307,7 @@ def intake(state: SessionState):
     else:
         update["awaiting_intake"] = False
         summary = f"Hồ sơ đủ {len(fields.REQUIRED)} trường bắt buộc ({len(profile)} trường đã có)"
-    return update, summary + (f"; {note}" if note else ""), calls
+    return update, summary + (f"; {note}" if note else ""), calls, fallback
 
 
 # ------------------------------------------------------------------ risk
