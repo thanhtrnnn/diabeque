@@ -2,7 +2,7 @@
 PY := .venv/bin/python
 COMPOSE := docker compose
 
-.PHONY: setup neo4j kb-restore kb up check down test docker-up docker-down
+.PHONY: setup neo4j kb-restore kb cypher up check down test docker-up docker-down
 
 # Một venv Python 3.11 cho cả hai API + npm ci cho hai frontend.
 setup:
@@ -24,6 +24,10 @@ kb-restore:
 kb:
 	$(MAKE) -C chap5-rag kb
 
+# Gộp neo4j/cypher/*.cypher thành neo4j/kb_diabet.cypher (bản đọc để nộp kèm báo cáo).
+cypher:
+	$(PY) scripts/combine_cypher.py
+
 up:
 	./demo.sh up
 
@@ -36,6 +40,7 @@ down:
 test:
 	$(MAKE) -C chap5-rag test
 	$(MAKE) -C chap6-agents test
+	$(PY) -m pytest tests -q
 
 docker-up:
 	$(COMPOSE) --profile full up -d --build
