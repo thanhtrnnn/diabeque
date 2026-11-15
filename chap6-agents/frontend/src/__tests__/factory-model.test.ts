@@ -153,6 +153,81 @@ describe("reduce", () => {
     expect(reduce(s, { type: "reset" })).toEqual(initialRunState());
   });
 
+  it("routes an emergency turn from the entry check straight to the exit check", () => {
+    const s = play([
+      { type: "start", turn: 1 },
+      { type: "step", step: step("safety_in") },
+      { type: "step", step: step("safety_out") },
+      { type: "finish", awaitingIntake: false },
+    ]);
+    expect(s.litTracks).toEqual(["in", "emergency", "out"]);
+    expect(s.stations.orchestrator).toBe("skipped");
+    expect(s.stations.safety_in).toBe("done");
+    expect(s.stations.exit).toBe("done");
+    expect(s.stations.memory).toBe("skipped");
+  });
+
+  it("starts a second turn clean after a turn that waits on intake", () => {
+    let s = play([
+      { type: "start", turn: 1 },
+      ...["safety_in", "orchestrator", "intake", "safety_out"].map((a): RunEvent => ({ type: "step", step: step(a) })),
+      { type: "finish", awaitingIntake: true },
+    ]);
+    expect(s.stations.memory).toBe("done");
+    s = reduce(s, { type: "start", turn: 2 });
+    expect(s.turn).toBe(2);
+    expect(s.stations.memory).toBe("idle");
+    expect(s.stations.exit).toBe("idle");
+    expect(s.stations.gate).toBe("active");
+    expect(s.litTracks).toEqual([]);
+    s = play(["safety_in", "orchestrator", "intake"].map((a): RunEvent => ({ type: "step", step: step(a) })), s);
+    expect(s.stations.intake).toBe("active");
+    expect(s.litTracks).toEqual(["in", "main1", "toIntake"]);
+  });
+
+  it("settles the previous station and relights the belts when an agent errors", () => {
+    const s = play([
+      { type: "start", turn: 1 },
+      { type: "step", step: step("safety_in") },
+      { type: "step", step: step("orchestrator") },
+      { type: "agentError", node: "knowledge", errorType: "RuntimeError" },
+    ]);
+    expect(s.stations.orchestrator).toBe("done");
+    expect(s.stations.knowledge).toBe("error");
+    expect(s.current).toBe("knowledge");
+    expect(s.litTracks).toEqual(["in", "main1", "toKnowledge"]);
+    expect(Object.values(s.stations)).not.toContain("active");
+  });
+
+  it("does not light the exit when a turn finishes after an error", () => {
+    const s = play([
+      { type: "start", turn: 1 },
+      { type: "step", step: step("safety_in") },
+      { type: "step", step: step("orchestrator") },
+      { type: "agentError", node: "knowledge", errorType: "RuntimeError" },
+      { type: "finish", awaitingIntake: false },
+    ]);
+    expect(s.litTracks).toEqual(["in", "main1", "toKnowledge"]);
+    expect(s.litTracks).not.toContain("out");
+    expect(s.stations.exit).not.toBe("done");
+    expect(s.stations.safety_out).toBe("skipped");
+    expect(s.stations.knowledge).toBe("error");
+  });
+
+  it("stops a cancelled turn without marking errors or leaving anything active", () => {
+    const s = play([
+      { type: "start", turn: 1 },
+      { type: "step", step: step("safety_in") },
+      { type: "step", step: step("orchestrator") },
+      { type: "cancel" },
+    ]);
+    expect(Object.values(s.stations)).not.toContain("active");
+    expect(Object.values(s.stations)).not.toContain("error");
+    expect(s.stations.safety_in).toBe("done");
+    expect(s.current).toBeNull();
+    expect(s.caption).toContain("dừng");
+  });
+
   it("does not mutate the previous state", () => {
     const a = initialRunState();
     const b = reduce(a, { type: "step", step: step("safety_in") });

@@ -30,6 +30,8 @@ export type RunEvent =
   | { type: "agentError"; node: string; errorType: string }
   | { type: "streamError"; message: string }
   | { type: "finish"; awaitingIntake: boolean }
+  /** The runner stopped this turn on purpose (new question, new scenario, stop button): nothing failed. */
+  | { type: "cancel" }
   | { type: "reset" };
 
 const IDLE_CAPTION = "Nhà máy đang chờ tin nhắn.";
@@ -51,6 +53,8 @@ function visited(stations: Record<StationId, StationState>): AgentId[] {
 
 const settle = (state: StationState): StationState => (state === "active" ? "done" : state);
 
+const belts = (stations: Record<StationId, StationState>): TrackId[] => ["in", ...pairTracks(visited(stations))];
+
 function withLog(state: RunState, entry: Omit<LogEntry, "turn">, caption: string): RunState {
   return { ...state, caption, log: [...state.log, { turn: state.turn, ...entry }] };
 }
@@ -69,7 +73,7 @@ function onStep(state: RunState, step: AgentStep): RunState {
     ...state,
     stations,
     current: step.agent,
-    litTracks: ["in", ...pairTracks(visited(stations))],
+    litTracks: belts(stations),
     lastSteps: { ...state.lastSteps, [step.agent]: step },
   };
   return withLog(next, { station: step.agent, level: fellBack ? "fallback" : "info", text }, text);
@@ -90,8 +94,11 @@ export function reduce(state: RunState, event: RunEvent): RunState {
       const node = isAgent(event.node) ? event.node : null;
       const where = node ? AGENT_LABELS[node] : `nút ${event.node}`;
       const text = `${where} gặp lỗi ${event.errorType}.`;
-      const next = node ? { ...state, stations: { ...state.stations, [node]: "error" as const }, current: node } : state;
-      return withLog(next, { station: node, level: "error", text }, text);
+      if (!node) return withLog(state, { station: null, level: "error", text }, text);
+      const stations = { ...state.stations, gate: settle(state.stations.gate) };
+      if (state.current && state.current !== node) stations[state.current] = settle(stations[state.current]);
+      stations[node] = "error";
+      return withLog({ ...state, stations, current: node, litTracks: belts(stations) }, { station: node, level: "error", text }, text);
     }
     case "streamError": {
       const text = `Luồng bị lỗi: ${event.message}`;
@@ -100,18 +107,33 @@ export function reduce(state: RunState, event: RunEvent): RunState {
       return withLog(next, { station: current, level: "error", text }, text);
     }
     case "finish": {
+      // A turn that hit an error never reached the exit check, whatever the stream says afterwards.
+      const failed = Object.values(state.stations).includes("error");
+      const waits = event.awaitingIntake && !failed;
       const stations = { ...state.stations };
       for (const id of Object.keys(stations) as StationId[]) {
-        if (id === "exit") stations.exit = stations.exit === "error" ? "error" : "done";
-        else if (id === "memory") stations.memory = event.awaitingIntake ? "done" : "skipped";
+        if (id === "exit") stations.exit = stations.exit === "error" ? "error" : failed ? "skipped" : "done";
+        else if (id === "memory") stations.memory = waits ? "done" : "skipped";
         else stations[id] = stations[id] === "idle" ? "skipped" : settle(stations[id]);
       }
       const path = visited(stations);
-      const litTracks = path.length ? routeFor(path, { loopsBack: event.awaitingIntake }) : [];
-      const text = event.awaitingIntake
-        ? `Lượt ${state.turn} dừng ở bước thu thập: chờ người dùng bổ sung thông tin.`
-        : `Lượt ${state.turn} hoàn tất.`;
-      return withLog({ ...state, stations, litTracks, current: null }, { station: "exit", level: "info", text }, text);
+      const litTracks = failed ? belts(stations) : path.length ? routeFor(path, { loopsBack: waits }) : [];
+      const text = failed
+        ? `Lượt ${state.turn} dừng vì lỗi.`
+        : waits
+          ? `Lượt ${state.turn} dừng ở bước thu thập: chờ người dùng bổ sung thông tin.`
+          : `Lượt ${state.turn} hoàn tất.`;
+      return withLog(
+        { ...state, stations, litTracks, current: null },
+        { station: failed ? null : "exit", level: failed ? "error" : "info", text },
+        text,
+      );
+    }
+    case "cancel": {
+      const stations = { ...state.stations };
+      for (const id of Object.keys(stations) as StationId[]) if (stations[id] === "active") stations[id] = "skipped";
+      const text = `Lượt ${state.turn} đã dừng.`;
+      return withLog({ ...state, stations, current: null }, { station: null, level: "info", text }, text);
     }
   }
 }
