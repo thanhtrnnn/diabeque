@@ -6,13 +6,14 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/app/chat" }));
 import { ProductShell } from "@/components/product/product-shell";
 
 describe("ProductShell", () => {
-  it("offers exactly the four sections, marking the current one", () => {
+  it("offers exactly the five sections, marking the current one", () => {
     render(<ProductShell current="graph"><p>nội dung</p></ProductShell>);
     const rail = screen.getAllByRole("navigation", { name: "Điều hướng chính" })[0];
     const links = within(rail).getAllByRole("link");
     expect(links.map((link) => [link.getAttribute("aria-label"), link.getAttribute("href")])).toEqual([
       ["Hỏi đáp", "/app/chat"],
       ["Kiến trúc", "/app/kien-truc"],
+      ["Nhà máy", "/app/nha-may"],
       ["Đồ thị tri thức", "/app/do-thi"],
       ["Phân loại khảo sát", "/app/phan-loai"],
     ]);
@@ -23,6 +24,16 @@ describe("ProductShell", () => {
     render(<ProductShell current="architecture"><p>nội dung</p></ProductShell>);
     const rail = screen.getAllByRole("navigation", { name: "Điều hướng chính" })[0];
     expect(within(rail).getByRole("link", { name: "Kiến trúc" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("links the factory from the rail and the mobile bar, marking it current", () => {
+    render(<ProductShell current="factory"><p>nội dung</p></ProductShell>);
+    const rail = screen.getAllByRole("navigation", { name: "Điều hướng chính" })[0];
+    expect(within(rail).getByRole("link", { name: "Nhà máy" })).toHaveAttribute("href", "/app/nha-may");
+    expect(within(rail).getByRole("link", { name: "Nhà máy" })).toHaveAttribute("aria-current", "page");
+    // The mobile bar is display:none at jsdom's default width; it is still in the tree.
+    const mobile = document.querySelector("nav[aria-label='Điều hướng chính trên mobile']");
+    expect(mobile?.querySelector("a[aria-label='Nhà máy']")).toHaveAttribute("href", "/app/nha-may");
   });
 
   it("brands the product and has no account or login controls", () => {

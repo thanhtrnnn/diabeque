@@ -1,124 +1,78 @@
 /**
- * What each factory character should be doing for a given `RunState`: mood, the switch-operator's rail, the
- * record-keeper's field count, the elder's balance, the miner's lift, the inspector's stamp. Pure, no three.js,
- * so the rules are testable in jsdom; the rigs in `components/factory/characters.ts` only act them out.
+ * Who works in the candy works: one original character per agent, with the facts its character sheet shows.
+ * Tools and fallbacks mirror `backend/app/agents/{nodes,tools}.py`; the props (gate, exit, memory safe) get a
+ * short note instead. Mood and prop cues for the 3D rigs live in `cues.ts`.
  */
-import { AGENT_IDS, type AgentId } from "@/lib/agents";
-import type { AgentStep } from "@/lib/chat-stream-contract";
-import type { StationId, TrackId } from "./layout";
-import type { RunState } from "./run-state";
+import type { AgentId } from "@/lib/agents";
+import type { StationId } from "./layout";
 
-export type Mood = "idle" | "work" | "alarm" | "hover";
-
-/** The three exits of the orchestrator's rail switch, in lever order (front, main line, back). */
-export const SWITCH_TRACKS = ["toKnowledge", "toIntake", "direct"] as const satisfies readonly TrackId[];
-export type SwitchTrack = (typeof SWITCH_TRACKS)[number];
-
-/** Fields the intake agent needs before risk can run (`backend/app/agents/fields.py::REQUIRED`). */
-export const REQUIRED_FIELDS = 7;
-
-/** Intent names as the backend writes them (`Ý định: knowledge (...)`) and as the dev fixtures phrase them. */
-const INTENT_TRACK: Array<[RegExp, SwitchTrack]> = [
-  [/\b(knowledge)\b|hỏi kiến thức/i, "toKnowledge"],
-  [/\b(assess_risk)\b|đánh giá nguy cơ/i, "toIntake"],
-  [/\b(greeting|out_of_scope)\b|chào hỏi|ngoài phạm vi/i, "direct"],
-];
-
-const ran = (state: RunState, id: StationId) => state.stations[id] !== "idle" && state.stations[id] !== "skipped";
-
-/** The gatekeeper caught an emergency this turn: the emergency belt is lit or the entry check said so. */
-export function isEmergency(state: RunState): boolean {
-  if (state.litTracks.includes("emergency")) return true;
-  const step = state.lastSteps.safety_in;
-  return ran(state, "safety_in") && !!step && /phát hiện.*(khẩn cấp|cấp cứu)/i.test(step.summary);
+export interface CastMember {
+  name: string;
+  /** What the agent does, one or two sentences. */
+  role: string;
+  /** Calls the language model (an LLM station with a cotton-candy feed line), or runs code only. */
+  llm: boolean;
+  /** Tool functions it calls, by their names in `tools.py` (each one is a machine in its room). */
+  tools: string[];
+  /** What happens when the LLM or a tool fails. */
+  fallback: string;
 }
 
-/**
- * Which exit the switch is thrown to. It follows the orchestrator's decision as soon as its step arrives, so
- * the lever moves one step before the sweet rolls onto the branch; a lit branch belt settles any doubt.
- */
-export function switchTarget(state: RunState): SwitchTrack | null {
-  for (const track of SWITCH_TRACKS) if (state.litTracks.includes(track)) return track;
-  const step = state.lastSteps.orchestrator;
-  if (!step || !ran(state, "orchestrator")) return null;
-  const intent = step.summary.match(/Ý định:\s*([^.;(]+)/i)?.[1] ?? "";
-  for (const [pattern, track] of INTENT_TRACK) if (pattern.test(intent)) return track;
-  return null;
-}
+export const CAST: Record<AgentId, CastMember> = {
+  safety_in: {
+    name: "Bác Gác Cổng",
+    role: "Quét tin nhắn bằng luật tìm dấu hiệu cấp cứu (khó thở, đau ngực, hôn mê, đường huyết quá thấp hoặc quá cao). Có dấu hiệu thì thổi còi và đưa thẳng ra cửa an toàn, 0 ms, không gọi LLM.",
+    llm: false,
+    tools: [],
+    fallback: "Chỉ chạy luật nên không phụ thuộc LLM. Nếu chính bước này ném lỗi, lượt dừng ở đây và báo lỗi, chưa có dự phòng.",
+  },
+  orchestrator: {
+    name: "Cô Bẻ Ghi",
+    role: "Đọc ý định của tin nhắn (hỏi kiến thức, đánh giá nguy cơ, chào hỏi, ngoài phạm vi) rồi kéo cần gạt để ray đổi sang đúng nhánh.",
+    llm: true,
+    tools: [],
+    fallback: "LLM sập thì lật sổ luật: nhận ý định bằng từ khóa, bước được gắn cờ dự phòng \"rules\".",
+  },
+  intake: {
+    name: "Chú Sổ Tay",
+    role: "Trích thông tin sức khỏe từ tin nhắn, ghép vào hồ sơ đã lưu của hội thoại và ghi lên bảng kẹp x/7 trường. Thiếu trường thì hỏi tối đa 3 câu và dừng lượt, lượt sau làm tiếp.",
+    llm: true,
+    tools: ["compute_bmi", "validate_profile"],
+    fallback: "LLM sập thì trích bằng luật (regex tuổi, cân nặng, chiều cao, có/không), cờ dự phòng \"rules\".",
+  },
+  risk: {
+    name: "Cụ Cân Đong",
+    role: "Chạy mô hình CNN-1D trên hồ sơ BRFSS để ước lượng ba nhóm tình trạng, hoặc LSTM phân Type 1 / Type 2 khi đã được chẩn đoán. Cân nghiêng theo xác suất.",
+    llm: false,
+    tools: ["predict_diabetes_risk", "predict_diabetes_type"],
+    fallback: "Chỉ chạy code. Nếu mô hình lỗi, lượt dừng ở đây và báo lỗi tool, chưa có dự phòng.",
+  },
+  knowledge: {
+    name: "Bé Đèn Pin",
+    role: "Đội mũ đèn đi thang máy xuống hầm tri thức Neo4j: truy xuất vector, BM25 và đồ thị, viết câu trả lời rồi chỉ giữ ý có trích dẫn hợp lệ.",
+    llm: true,
+    tools: ["search_knowledge", "search_passages"],
+    fallback: "LLM sập thì trả 3 đoạn tài liệu truy xuất được, mỗi đoạn kèm trích dẫn, cờ dự phòng \"passages\". Neo4j lỗi thì báo lỗi tool.",
+  },
+  advisor: {
+    name: "Chị Pha Chế",
+    role: "Rót lời khuyên hợp với hồ sơ và kết quả ước lượng, chỉ từ các đoạn nguồn lấy theo yếu tố nguy cơ của người đó, mỗi ý một trích dẫn.",
+    llm: true,
+    tools: ["get_recommendations"],
+    fallback: "LLM sập thì liệt kê khuyến nghị lấy từ dữ kiện đồ thị tri thức, kèm trích dẫn đoạn gốc, cờ dự phòng \"graph_facts\".",
+  },
+  safety_out: {
+    name: "Ông Soát Vé",
+    role: "Kiểm lại mọi phần do LLM viết: bỏ câu có liều thuốc (đóng dấu đỏ), bỏ câu kết luận chẩn đoán cá nhân, bỏ phần không còn trích dẫn, rồi ghi lịch sử hội thoại.",
+    llm: false,
+    tools: [],
+    fallback: "Chỉ chạy luật nên không phụ thuộc LLM. Phần dự phòng của các phòng trước cũng đi qua đây và được lọc như mọi phần khác.",
+  },
+};
 
-/** Fields the record-keeper has written down, from the intake step: "4/7", "còn thiếu A, B", "đủ 7", or the tool result. */
-export function fieldsCount(step: AgentStep | undefined): number | null {
-  if (!step) return null;
-  const clamp = (n: number) => Math.max(0, Math.min(REQUIRED_FIELDS, n));
-  const ratio = step.summary.match(/(\d+)\s*\/\s*7\b/);
-  if (ratio) return clamp(Number(ratio[1]));
-  const missing = step.summary.match(/còn thiếu\s+([^;.]+)/i);
-  if (missing) return clamp(REQUIRED_FIELDS - missing[1].split(",").filter((s) => s.trim()).length);
-  if (/(^|\s)đủ(\s|$)/i.test(step.summary)) return REQUIRED_FIELDS;
-  const checked = step.tools.find((t) => t.name === "validate_profile")?.result as { profile?: Record<string, unknown> } | undefined;
-  if (checked && typeof checked === "object" && checked.profile && typeof checked.profile === "object") {
-    return clamp(Object.keys(checked.profile).length);
-  }
-  return null;
-}
-
-/**
- * Probability that the profile falls in a diabetes group (pre-diabetes or diabetes), from the risk tool's
- * population-corrected probabilities, else its raw ones, else the first percentage in the step summary.
- */
-export function riskShare(step: AgentStep | undefined): number | null {
-  if (!step) return null;
-  const result = step.tools.find((t) => t.name === "predict_diabetes_risk")?.result as
-    | { probs?: Record<string, number>; probs_population?: Record<string, number> | null }
-    | undefined;
-  const probs = result && typeof result === "object" ? (result.probs_population ?? result.probs) : undefined;
-  if (probs && typeof probs["0"] === "number") return Math.max(0, Math.min(1, 1 - probs["0"]));
-  const pct = step.summary.match(/(\d+(?:[.,]\d+)?)\s*%/);
-  return pct ? Math.max(0, Math.min(1, Number(pct[1].replace(",", ".")) / 100)) : null;
-}
-
-/** The exit check stripped a dosage sentence (`safety_flags` carries `dosage_removed`). */
-export function dosageRemoved(state: RunState): boolean {
-  const step = state.lastSteps.safety_out;
-  return ran(state, "safety_out") && !!step && /dosage_removed/.test(step.summary);
-}
-
-export interface CastCues {
-  moods: Record<AgentId, Mood>;
-  /** Index into `SWITCH_TRACKS`, or -1 for the parked switch. */
-  switchIndex: number;
-  /** Rule book open in the switch-operator's hands: the orchestrator ran on rules because the LLM was down. */
-  ruleBook: boolean;
-  fields: number;
-  /** 0..1, or null for a level balance (no reading this turn). */
-  tilt: number | null;
-  /** The miner is down in the cellar with the headlamp on (from the knowledge step to the end of the turn). */
-  minerBelow: boolean;
-  /** The inspector's stamp this turn: null before the exit check ran. */
-  stamp: "ok" | "removed" | null;
-}
-
-/** Mood per character: error or emergency → alarm, the running agent → work, hover only lifts an idle one. */
-export function moodFor(id: AgentId, state: RunState, hovered: StationId | null): Mood {
-  const s = state.stations[id];
-  if (s === "error") return "alarm";
-  if (id === "safety_in" && isEmergency(state)) return "alarm";
-  if (s === "active" || (s === "fallback" && state.current === id)) return "work";
-  return hovered === id ? "hover" : "idle";
-}
-
-export function castCues(state: RunState, hovered: StationId | null = null): CastCues {
-  const moods = Object.fromEntries(AGENT_IDS.map((id) => [id, moodFor(id, state, hovered)])) as Record<AgentId, Mood>;
-  const target = switchTarget(state);
-  return {
-    moods,
-    switchIndex: target ? SWITCH_TRACKS.indexOf(target) : -1,
-    ruleBook: state.stations.orchestrator === "fallback",
-    fields: ran(state, "intake") ? (fieldsCount(state.lastSteps.intake) ?? 0) : 0,
-    tilt: ran(state, "risk") ? riskShare(state.lastSteps.risk) : null,
-    // Steps arrive when an agent has finished, so a moment as "active" is too short for the lift: the miner
-    // stays below from the knowledge step until the turn ends, then rides back up.
-    minerBelow: ran(state, "knowledge") && state.current !== null,
-    stamp: ran(state, "safety_out") ? (dosageRemoved(state) ? "removed" : "ok") : null,
-  };
-}
+/** The three props are not agents: a sentence each for their sheet. */
+export const PROP_NOTES: Record<Exclude<StationId, AgentId>, { name: string; note: string }> = {
+  gate: { name: "Cửa vào", note: "Mỗi tin nhắn được gói thành một viên kẹo và đi vào đây, mang theo mã hội thoại để lượt sau nối tiếp." },
+  exit: { name: "Trả lời", note: "Viên kẹo ra khỏi xưởng thành câu trả lời có trích dẫn. Khi Thu thập còn hỏi lại, ray vòng về két nhớ chờ lượt sau." },
+  memory: { name: "Két nhớ", note: "InMemorySaver của LangGraph: giữ hồ sơ và lịch sử theo từng hội thoại. Sáng lên khi lượt dừng chờ người dùng bổ sung thông tin." },
+};

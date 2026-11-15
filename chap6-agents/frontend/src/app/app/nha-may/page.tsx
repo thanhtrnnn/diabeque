@@ -1,7 +1,7 @@
-// STUB (Task 10 manual check). Task 12 replaces this file with the real page, HUD and character sheet.
 import { Baloo_2, Be_Vietnam_Pro } from "next/font/google";
 
-import { DevStub } from "./dev-stub";
+import { FactoryView } from "@/components/factory/factory-view";
+import { ProductShell } from "@/components/product/product-shell";
 
 import type { Metadata } from "next";
 
@@ -10,10 +10,12 @@ const text = Be_Vietnam_Pro({ variable: "--font-factory-text", subsets: ["latin"
 
 export const metadata: Metadata = { title: "Nhà máy" };
 
-export default function FactoryStubPage() {
+export default function FactoryPage() {
   return (
-    <div className={`${display.variable} ${text.variable}`} style={{ width: "100vw", height: "100vh" }}>
-      <DevStub />
-    </div>
+    <ProductShell current="factory">
+      <div className={`${display.variable} ${text.variable}`}>
+        <FactoryView />
+      </div>
+    </ProductShell>
   );
 }

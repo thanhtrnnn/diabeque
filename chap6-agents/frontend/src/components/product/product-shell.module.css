@@ -145,7 +145,7 @@
   .tabletNav :global(.product-nav__tablet-label) { display: inline; }
   :global(.product-page--app) .tabletNav {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     overflow: visible;
   }
   :global(.product-page--app) .tabletNav a {
@@ -175,7 +175,7 @@
     gap: var(--space-3xs);
     background: var(--color-ink);
   }
-  :global(.product-page--app) .mobileNav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  :global(.product-page--app) .mobileNav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .mobileNav a {
     min-width: 0;
     min-height: 52px;

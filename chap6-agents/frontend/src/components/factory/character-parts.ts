@@ -6,7 +6,7 @@
  */
 import * as THREE from "three";
 
-import type { Mood } from "@/lib/factory/cast";
+import type { Mood } from "@/lib/factory/cues";
 import { PALETTE, disposeTree, stripeTexture } from "./materials";
 
 export type { Mood };

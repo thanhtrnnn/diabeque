@@ -12,6 +12,8 @@ export interface LogEntry {
   station: StationId | null;
   level: "info" | "fallback" | "error";
   text: string;
+  /** The agent step this entry reports, for the run log's agent / summary / ms / fallback columns. */
+  step?: AgentStep;
 }
 
 export interface RunState {
@@ -76,7 +78,7 @@ function onStep(state: RunState, step: AgentStep): RunState {
     litTracks: belts(stations),
     lastSteps: { ...state.lastSteps, [step.agent]: step },
   };
-  return withLog(next, { station: step.agent, level: fellBack ? "fallback" : "info", text }, text);
+  return withLog(next, { station: step.agent, level: fellBack ? "fallback" : "info", text, step }, text);
 }
 
 export function reduce(state: RunState, event: RunEvent): RunState {

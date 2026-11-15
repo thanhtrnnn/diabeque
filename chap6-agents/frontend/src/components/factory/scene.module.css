@@ -7,9 +7,7 @@
   height: 100%;
   box-sizing: border-box;
   overflow: hidden;
-  /* Lamp-lit chocolate room behind a transparent canvas. */
-  background:
-    radial-gradient(ellipse 70% 60% at 50% 42%, var(--color-candy-cocoa) 0%, var(--color-candy-chocolate-2) 45%, var(--color-candy-chocolate) 100%);
+  /* Transparent: the page paints the lamp-lit chocolate room behind the canvas and the HUD together. */
   font-family: var(--font-factory-text, "Be Vietnam Pro"), system-ui, sans-serif;
 }
 
@@ -97,7 +95,7 @@
 .label[data-state="fallback"] .labelIcon { color: var(--color-candy-lemon); }
 .label[data-state="error"] { border-color: var(--color-candy-strawberry); }
 .label[data-state="error"] .labelIcon { color: var(--color-candy-strawberry); }
-.label[data-state="skipped"] { color: var(--color-candy-ash); text-decoration: line-through; text-decoration-thickness: 2px; }
+.label[data-state="skipped"] { color: var(--color-candy-ash-ink); text-decoration: line-through; text-decoration-thickness: 2px; }
 
 .kind {
   width: var(--icon-size-small);
@@ -162,6 +160,13 @@
   outline: 3px solid var(--color-candy-lemon);
   outline-offset: 3px;
   box-shadow: none;
+}
+
+/* Phone width: the diorama is small, so the chips shrink with it; the KB build strip would sit on the cellar chip and is left to wider screens. */
+@media (max-width: 47.9375rem) {
+  .label { font-size: var(--type-step-14); }
+  .labelIcon { width: var(--icon-size-small); height: var(--icon-size-small); }
+  .strip { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

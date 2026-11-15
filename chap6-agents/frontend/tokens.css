@@ -127,5 +127,7 @@
   --color-candy-mint: #6ad1e3;
   --color-candy-sugar: #fff4e0;
   --color-candy-ash: #8a7a70;
+  /* Ash for text: 6.1:1 on chocolate, 5.3:1 on chocolate-2 (plain ash is 4.2 / 3.7, icons and rules only). */
+  --color-candy-ash-ink: #a8968a;
   --shadow-candy-chip: 0 0.25rem 0.75rem color-mix(in oklch, #000 45%, transparent);
 }

@@ -1,7 +1,7 @@
 /** Workers at the front of the line: Bác Gác Cổng (safety_in), Cô Bẻ Ghi (orchestrator) with the rail switch, Chú Sổ Tay (intake). */
 import * as THREE from "three";
 
-import { SWITCH_TRACKS } from "@/lib/factory/cast";
+import { SWITCH_TRACKS } from "@/lib/factory/cues";
 import {
   BaseRig, _a, _b, approach, ball, canvasTexture, capsule, head, lathe, limb, part, reach, relax, rod,
 } from "./character-parts";

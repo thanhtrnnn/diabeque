@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { AgentStep } from "@/lib/chat-stream-contract";
-import { SWITCH_TRACKS, castCues, fieldsCount, isEmergency, moodFor, riskShare, switchTarget } from "@/lib/factory/cast";
+import { SWITCH_TRACKS, castCues, fieldsCount, isEmergency, moodFor, riskShare, switchTarget } from "@/lib/factory/cues";
 import { initialRunState, reduce, type RunEvent, type RunState } from "@/lib/factory/run-state";
 
 const step = (agent: string, summary: string, extra: Partial<AgentStep> = {}): AgentStep => ({

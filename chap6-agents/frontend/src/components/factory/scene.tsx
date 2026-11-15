@@ -13,7 +13,7 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 import { AGENT_IDS, AGENT_LABELS, type AgentId } from "@/lib/agents";
-import { castCues } from "@/lib/factory/cast";
+import { castCues } from "@/lib/factory/cues";
 import { STATIONS, type StationId } from "@/lib/factory/layout";
 import type { RunState, StationState } from "@/lib/factory/run-state";
 import { SweetRunner, buildSweet, selectable } from "./candy";
@@ -33,14 +33,25 @@ export interface FactorySceneProps {
 /** Camera: ~35° above the table, turned 14° off the front so the main line still reads left to right. */
 const ELEVATION = THREE.MathUtils.degToRad(35);
 const AZIMUTH = THREE.MathUtils.degToRad(14);
-/** Share of the frame kept clear for the HUD: question field on top, caption ticker at the bottom. */
-const FRAME_PAD = { top: 0.12, bottom: 0.1, side: 0.03 };
+/** Margin kept around the diorama: room for the chips above the rooms and the cellar strip below. The HUD sits outside the stage. */
+const FRAME_PAD = { top: 0.07, bottom: 0.05, side: 0.02 };
+/** How far the camera leans in on the room that is working, and how fast it gets there (per second). */
+const FOCUS_ZOOM = 2;
+const EASE_RATE = 4.5;
+/** Seconds the camera stays on the last room after a turn ends, so the closing gesture (stamp, whistle) is seen. */
+const FOCUS_HOLD = 1.4;
+/** Where to look for each station when it is the one working, relative to its floor: the worker's chest; the knowledge room looks between the plinth and the cellar so the miner stays in view. */
+const FOCUS_LIFT: Partial<Record<StationId, THREE.Vector3>> = { knowledge: new THREE.Vector3(-0.6, -1.3, 0.8) };
+const DEFAULT_LIFT = new THREE.Vector3(0, 0.9, 0);
 
 const NAMES: Record<StationId, string> = { ...AGENT_LABELS, gate: "Cửa vào", exit: "Trả lời", memory: "Két nhớ" };
-/** Short chip names so neighbouring labels never collide at projector size; the full name stays in `aria-label`. */
+/**
+ * Short chip names so neighbouring labels never collide at projector size. Each full name in `aria-label`
+ * starts with its chip text, so a voice command naming what is on screen still finds the button.
+ */
 const SHORT: Record<StationId, string> = {
-  gate: "Cửa vào", safety_in: "An toàn vào", orchestrator: "Điều phối", intake: "Thu thập", risk: "Dự đoán",
-  knowledge: "Tra cứu", advisor: "Tư vấn", safety_out: "An toàn ra", exit: "Trả lời", memory: "Két nhớ",
+  gate: "Cửa vào", safety_in: "An toàn (vào)", orchestrator: "Điều phối", intake: "Thu thập", risk: "Dự đoán",
+  knowledge: "Tra cứu", advisor: "Tư vấn", safety_out: "An toàn (ra)", exit: "Trả lời", memory: "Két nhớ",
 };
 const STATE_TEXT: Record<StationState, string> = {
   idle: "đang chờ", active: "đang chạy", done: "đã chạy", skipped: "bỏ qua", fallback: "chạy dự phòng", error: "lỗi",
@@ -86,6 +97,7 @@ export function FactoryScene(props: FactorySceneProps) {
 
 /** `y` is where the chip sits; `anchor` is where its room is when the chip had to move off it. */
 type LabelPoint = { x: number; y: number; anchor?: number };
+type Frustum = { left: number; right: number; top: number; bottom: number };
 
 function FactoryCanvas({ state, selected, onSelect, reducedMotion, onLost }: FactorySceneProps & { onLost: () => void }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -217,8 +229,8 @@ const CHARACTER_SCALE: Record<AgentId, number> = {
 };
 /** Height of a room's plinth top above its station origin (world.ts PLINTH_H). */
 const PLINTH_TOP = 0.3;
-/** Where the miner stands in the cellar, relative to the knowledge station: front-left of the lift, low enough on screen to clear the room's label. */
-const MINER_BELOW = new THREE.Vector3(-0.35, -2.2, 1.05);
+/** Where the miner stands in the cellar, relative to the knowledge station: well left of the lift, by the Neo4j block, so the room chip hanging below the plinth never covers it when the camera leans in. */
+const MINER_BELOW = new THREE.Vector3(-2, -2.2, 1.05);
 
 class Engine {
   private readonly renderer: THREE.WebGLRenderer;
@@ -239,6 +251,14 @@ class Engine {
   private reduced = false;
   private down: { x: number; y: number } | null = null;
   private hoverFrame = 0;
+  /** The whole diorama fitted to the canvas; the frustum the camera eases toward; the one it shows now. */
+  private full: Frustum = { left: -1, right: 1, top: 1, bottom: -1 };
+  private goal: Frustum = { ...this.full };
+  private view: Frustum = { ...this.full };
+  private focus: StationId | null = null;
+  /** Clock time at which a held focus lets go (the turn already ended). */
+  private releaseAt: number | null = null;
+  private size = { width: 1, height: 1 };
 
   constructor(private readonly host: HTMLElement, private readonly hooks: EngineHooks) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -290,8 +310,7 @@ class Engine {
     } catch (error) {
       // Free the context before the page falls back, or a retry could hit the browser's context limit.
       for (const rig of Object.values(this.cast)) rig.dispose();
-      for (const rig of Object.values(this.cast)) rig.dispose();
-    disposeTree(this.scene);
+      disposeTree(this.scene);
       renderer.forceContextLoss();
       renderer.dispose();
       renderer.domElement.remove();
@@ -342,6 +361,21 @@ class Engine {
       mesh.material.emissiveIntensity = on ? 0.45 : 0;
     }
     this.runner.setTracks(state.litTracks, reducedMotion);
+    // Lean in on the working room while a turn runs; the whole works again when it is idle. Never under reduced motion.
+    const focus = reducedMotion || !state.current || state.current === "memory" ? null : state.current;
+    if (focus && focus !== this.focus) {
+      this.releaseAt = null;
+      this.focus = focus;
+      this.aim();
+    } else if (focus) {
+      this.releaseAt = null;
+    } else if (this.focus && reducedMotion) {
+      this.focus = null;
+      this.releaseAt = null;
+      this.aim();
+    } else if (this.focus && this.releaseAt === null) {
+      this.releaseAt = this.timer.elapsedTime + FOCUS_HOLD;
+    }
     const down = LLM_STATIONS.some((id) => state.stations[id] === "fallback");
     const cloud = this.world.materials.cloud;
     cloud.color.set(down ? PALETTE.ash : PALETTE.sugar);
@@ -378,8 +412,66 @@ class Engine {
       if (busy) this.world.materials.cloud.emissiveIntensity = 0.2 + 0.25 * (0.5 + 0.5 * Math.sin(time * 4));
     }
     if (!this.reduced) this.world.cloud.rotation.y = Math.sin(time * 0.3) * 0.04;
+    if (this.releaseAt !== null && time >= this.releaseAt) {
+      this.releaseAt = null;
+      this.focus = null;
+      this.aim();
+    }
+    this.ease(dt);
     this.renderer.render(this.scene, this.camera);
   };
+
+  /** Sets the goal frustum: the full frame, or a closer one around the focused station kept inside the full frame. */
+  private aim(): void {
+    const full = this.full;
+    if (!this.focus) {
+      this.goal = { ...full };
+    } else {
+      const point = stationPosition(this.focus).add(FOCUS_LIFT[this.focus] ?? DEFAULT_LIFT).applyMatrix4(this.camera.matrixWorldInverse);
+      const halfW = (full.right - full.left) / 2 / FOCUS_ZOOM;
+      const halfH = (full.top - full.bottom) / 2 / FOCUS_ZOOM;
+      const cx = THREE.MathUtils.clamp(point.x, full.left + halfW, full.right - halfW);
+      const cy = THREE.MathUtils.clamp(point.y, full.bottom + halfH, full.top - halfH);
+      this.goal = { left: cx - halfW, right: cx + halfW, top: cy + halfH, bottom: cy - halfH };
+    }
+    if (this.reduced) this.apply(this.goal);
+  }
+
+  /** Exponential ease toward the goal; labels follow every frame the camera moves. */
+  private ease(dt: number): void {
+    const v = this.view;
+    const g = this.goal;
+    const gap = Math.max(Math.abs(v.left - g.left), Math.abs(v.right - g.right), Math.abs(v.top - g.top), Math.abs(v.bottom - g.bottom));
+    if (gap === 0) return;
+    if (gap < 1e-3 || this.reduced) {
+      this.apply(g);
+      return;
+    }
+    const k = 1 - Math.exp(-dt * EASE_RATE);
+    this.apply({
+      left: v.left + (g.left - v.left) * k,
+      right: v.right + (g.right - v.right) * k,
+      top: v.top + (g.top - v.top) * k,
+      bottom: v.bottom + (g.bottom - v.bottom) * k,
+    });
+  }
+
+  private apply(frustum: Frustum): void {
+    this.view = { ...frustum };
+    Object.assign(this.camera, frustum);
+    this.camera.updateProjectionMatrix();
+    this.projectLabels();
+  }
+
+  private projectLabels(): void {
+    const { width, height } = this.size;
+    const labels: Record<string, LabelPoint> = {};
+    for (const [key, point] of Object.entries(this.world.labelAt)) {
+      const p = point.clone().project(this.camera);
+      labels[key] = { x: Math.round((p.x * 0.5 + 0.5) * width), y: Math.round((-p.y * 0.5 + 0.5) * height) };
+    }
+    this.hooks.onLabels(declutter(labels));
+  }
 
   /** Fits the diorama's bounding box into the canvas, leaving room for the HUD, and re-projects labels. */
   private resize(): void {
@@ -407,15 +499,11 @@ class Engine {
     // Centre the box inside the padded band, not the whole canvas.
     const cx = (min.x + max.x) / 2;
     const cy = (min.y + max.y) / 2 - (FRAME_PAD.top - FRAME_PAD.bottom) * halfH;
-    Object.assign(this.camera, { left: cx - halfW, right: cx + halfW, top: cy + halfH, bottom: cy - halfH });
-    this.camera.updateProjectionMatrix();
-
-    const labels: Record<string, LabelPoint> = {};
-    for (const [key, point] of Object.entries(this.world.labelAt)) {
-      const p = point.clone().project(this.camera);
-      labels[key] = { x: Math.round((p.x * 0.5 + 0.5) * width), y: Math.round((-p.y * 0.5 + 0.5) * height) };
-    }
-    this.hooks.onLabels(declutter(labels));
+    this.size = { width, height };
+    this.full = { left: cx - halfW, right: cx + halfW, top: cy + halfH, bottom: cy - halfH };
+    this.aim();
+    // A resize jumps straight to the new framing; only focus changes ease.
+    this.apply(this.goal);
   }
 
   private pick(event: PointerEvent): string | null {
