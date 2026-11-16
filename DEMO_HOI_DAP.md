@@ -24,7 +24,7 @@ Mở sẵn các tab:
 | Tab | Dùng cho |
 |---|---|
 | `docs/tieuluanFinal_02_nhom02_TranXuanThanh.pdf` (bản tiếng Việt đã nộp) | Chap 1–4 |
-| `../report_en/main.pdf` (bản tiếng Anh, 97 trang) | nếu thầy hỏi bản tiếng Anh |
+| `../tieuluanFinal_02_nhom02_TranXuanThanh_EN.pdf` (bản tiếng Anh, 97 trang) | nếu thầy hỏi bản tiếng Anh |
 | VS Code: `chap5-rag/pipeline/sources.yaml`, `neo4j/kb_diabet.cypher`, `chap6-agents/backend/app/agents/graph.py` | phần 2, 3 |
 | `http://localhost:27474` (neo4j / `kb_diabet_a8`) | Neo4j Browser |
 | `http://localhost:3100` | RAG Chương 5 |
