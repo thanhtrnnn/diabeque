@@ -1,4 +1,4 @@
-import { ChatCenteredTextIcon, ClipboardTextIcon, FactoryIcon, GraphIcon, TreeStructureIcon } from "@phosphor-icons/react/dist/ssr";
+import { BookOpenTextIcon, ChatCenteredTextIcon, ClipboardTextIcon, FactoryIcon, GraphIcon, TreeStructureIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 
 import { NavigationFeedback } from "@/components/product/navigation-feedback";
@@ -7,7 +7,7 @@ import { ProductMark, PRODUCT_TAGLINE } from "@/components/product/product-mark"
 
 import styles from "./product-shell.module.css";
 
-export type ProductSection = "chat" | "architecture" | "factory" | "graph" | "classify";
+export type ProductSection = "chat" | "architecture" | "factory" | "graph" | "classify" | "exam";
 
 const NAV: Array<{ key: ProductSection; href: string; label: string; mobileLabel: string; icon: typeof GraphIcon }> = [
   { key: "chat", href: "/app/chat", label: "Hỏi đáp", mobileLabel: "Hỏi đáp", icon: ChatCenteredTextIcon },
@@ -15,6 +15,7 @@ const NAV: Array<{ key: ProductSection; href: string; label: string; mobileLabel
   { key: "factory", href: "/app/nha-may", label: "Nhà máy", mobileLabel: "Nhà máy", icon: FactoryIcon },
   { key: "graph", href: "/app/do-thi", label: "Đồ thị tri thức", mobileLabel: "Đồ thị", icon: GraphIcon },
   { key: "classify", href: "/app/phan-loai", label: "Phân loại khảo sát", mobileLabel: "Khảo sát", icon: ClipboardTextIcon },
+  { key: "exam", href: "/app/on-tap", label: "Ôn vấn đáp", mobileLabel: "Ôn thi", icon: BookOpenTextIcon },
 ];
 
 const NAV_LABEL = "Điều hướng chính";

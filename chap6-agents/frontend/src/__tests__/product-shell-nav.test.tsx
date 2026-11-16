@@ -6,7 +6,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/app/chat" }));
 import { ProductShell } from "@/components/product/product-shell";
 
 describe("ProductShell", () => {
-  it("offers exactly the five sections, marking the current one", () => {
+  it("offers exactly the six sections, marking the current one", () => {
     render(<ProductShell current="graph"><p>nội dung</p></ProductShell>);
     const rail = screen.getAllByRole("navigation", { name: "Điều hướng chính" })[0];
     const links = within(rail).getAllByRole("link");
@@ -16,6 +16,7 @@ describe("ProductShell", () => {
       ["Nhà máy", "/app/nha-may"],
       ["Đồ thị tri thức", "/app/do-thi"],
       ["Phân loại khảo sát", "/app/phan-loai"],
+      ["Ôn vấn đáp", "/app/on-tap"],
     ]);
     expect(links.filter((link) => link.getAttribute("aria-current") === "page").map((link) => link.getAttribute("aria-label"))).toEqual(["Đồ thị tri thức"]);
   });
