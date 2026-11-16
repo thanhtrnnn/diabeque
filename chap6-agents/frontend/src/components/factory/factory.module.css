@@ -11,8 +11,8 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--factory-log-width);
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  grid-template-areas: "hud log" "stage log" "ticker log";
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "hud log" "stage log" "ticker log" "answer log";
   width: 100%;
   min-width: 0;
   height: calc(100dvh - var(--factory-top));
@@ -302,6 +302,79 @@
   border-top: var(--rule-hair) solid color-mix(in oklch, var(--color-candy-cocoa) 70%, transparent);
   background: color-mix(in oklch, var(--color-candy-chocolate) 82%, transparent);
 }
+
+/* Answer of the turn: capped so the diorama keeps most of the height; scrolls inside. */
+.answer {
+  grid-area: answer;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: 34dvh;
+  border-top: var(--rule-hair) solid var(--color-candy-cocoa);
+  background: var(--color-candy-chocolate);
+}
+
+.answerHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  width: 100%;
+  min-height: var(--control-height-compact);
+  padding: var(--space-3xs) var(--space-md);
+  border: 0;
+  background: transparent;
+  color: var(--color-candy-lemon);
+  font: inherit;
+  font-size: var(--type-step-14);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.answerQuestion {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.answerCaret { transition: transform var(--dur-short, 150ms) var(--ease-out); }
+.answer:not([data-open]) .answerCaret { transform: rotate(-90deg); }
+
+.answerBody {
+  display: grid;
+  align-content: start;
+  gap: var(--space-xs);
+  min-height: 0;
+  padding: 0 var(--space-md) var(--space-sm);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.answerSection { min-width: 0; }
+
+.answerTitle {
+  margin: 0 0 var(--space-3xs);
+  color: var(--color-candy-strawberry);
+  font-family: var(--font-factory-display, "Baloo 2"), sans-serif;
+  font-size: var(--type-step-16);
+  font-weight: 700;
+}
+
+.answerText,
+.answerWait {
+  margin: 0;
+  color: var(--color-candy-sugar);
+  font-size: var(--type-step-14);
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  max-width: 72ch;
+}
+
+.answerWait { color: var(--color-candy-ash-ink); }
+
+.answerSection[data-kind="basis"] .answerText { color: var(--color-candy-ash-ink); }
 
 .ticker {
   flex: 1;
@@ -721,6 +794,8 @@
   .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .stage { height: 58dvh; min-height: 20rem; }
   .tickerBar { padding-inline: var(--space-sm); }
+  .answer { max-height: none; }
+  .answerHead, .answerBody { padding-inline: var(--space-sm); }
   .ticker { font-size: var(--type-step-16); white-space: normal; }
   .log { max-height: 60dvh; border-left: 0; border-top: var(--rule-hair) solid var(--color-candy-cocoa); }
   .sheet {

@@ -47,6 +47,13 @@ export const CAST: Record<AgentId, CastMember> = {
     tools: ["predict_diabetes_risk", "predict_diabetes_type"],
     fallback: "Chỉ chạy code. Nếu mô hình lỗi, lượt dừng ở đây và báo lỗi tool, chưa có dự phòng.",
   },
+  rules: {
+    name: "Cô Thước Kẻ",
+    role: "Cầm cuốn luật ADA 2025 đối chiếu từng dòng hồ sơ: BMI ≥ 23, ≥ 35 tuổi, huyết áp, mỡ máu, vận động, và ngưỡng HbA1c / đường huyết đói nếu người dùng nhập. Luật và mô hình lệch nhau thì giơ cờ rà soát.",
+    llm: false,
+    tools: ["evaluate_rules"],
+    fallback: "Chỉ chạy luật Python nên không phụ thuộc LLM; kết quả luật luôn tách riêng khỏi dự đoán của mô hình.",
+  },
   knowledge: {
     name: "Bé Đèn Pin",
     role: "Đội mũ đèn đi thang máy xuống hầm tri thức Neo4j: truy xuất vector, BM25 và đồ thị, viết câu trả lời rồi chỉ giữ ý có trích dẫn hợp lệ.",
@@ -67,6 +74,13 @@ export const CAST: Record<AgentId, CastMember> = {
     llm: false,
     tools: [],
     fallback: "Chỉ chạy luật nên không phụ thuộc LLM. Phần dự phòng của các phòng trước cũng đi qua đây và được lọc như mọi phần khác.",
+  },
+  audit: {
+    name: "Anh Sổ Cái",
+    role: "Ghi mỗi lượt vào sổ results/audit.jsonl: mã yêu cầu, từng bước ok hay dự phòng, phiên bản mô hình, thời gian, bằng chứng. Không chép nội dung tin nhắn.",
+    llm: false,
+    tools: ["write_audit"],
+    fallback: "Ghi sổ lỗi thì chỉ ghi chú vào vết chạy; câu trả lời vẫn đi ra bình thường.",
   },
 };
 

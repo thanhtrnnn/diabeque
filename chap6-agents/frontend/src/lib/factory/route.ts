@@ -11,7 +11,9 @@ const PAIR_TRACK: Record<string, TrackId> = {
   "orchestrator>safety_out": "direct",
   "intake>risk": "toRisk",
   "intake>safety_out": "missing",
-  "risk>advisor": "toAdvisor",
+  "risk>rules": "toRules",
+  "rules>advisor": "toAdvisor",
+  "safety_out>audit": "toAudit",
   "advisor>safety_out": "toSafeOut",
   "knowledge>safety_out": "knowledgeOut",
 };

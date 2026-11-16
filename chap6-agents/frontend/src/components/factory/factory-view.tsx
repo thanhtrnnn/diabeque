@@ -15,7 +15,7 @@ import { useFactoryRun } from "@/lib/factory/use-factory-run";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useRemote } from "@/lib/use-remote";
 import { CharacterSheet, type SheetSelection } from "./character-sheet";
-import { FactoryHud, FactoryLog, FactoryTicker } from "./factory-hud";
+import { FactoryAnswer, FactoryHud, FactoryLog, FactoryTicker } from "./factory-hud";
 import styles from "./factory.module.css";
 
 const FactoryScene = dynamic(() => import("./scene").then((m) => m.FactoryScene), {
@@ -65,6 +65,7 @@ export function FactoryView({ scenarios = SCENARIOS }: { scenarios?: Scenario[] 
         <FactoryScene state={run.state} selected={selection?.station ?? null} onSelect={select} reducedMotion={reducedMotion} />
       </div>
       <FactoryTicker caption={run.state.caption} turn={run.state.turn} busy={run.busy} />
+      <FactoryAnswer turn={run.state.turn} question={run.state.question} answer={run.state.answer} busy={run.busy} />
       <FactoryLog log={run.state.log} open={logOpen} onToggle={() => setLogOpen((open) => !open)} onSelect={select} inert={covered} />
       <CharacterSheet
         selection={selection}

@@ -63,7 +63,7 @@ const SCENARIOS: Scenario[] = [
     id: "nguy-co", label: "Nguy cơ hai lượt",
     turns: [
       { message: "Tôi 52 tuổi", steps: [s("safety_in"), s("orchestrator"), s("intake"), s("safety_out")], sections: [{ kind: "question", title: "Cần thêm thông tin", text: "Cholesterol?" }] },
-      { message: "Không mỡ máu", steps: [s("safety_in"), s("orchestrator"), s("intake"), s("risk"), s("advisor"), s("safety_out")], sections: [{ kind: "risk", title: "Ước lượng nguy cơ", text: "13%" }] },
+      { message: "Không mỡ máu", steps: [s("safety_in"), s("orchestrator"), s("intake"), s("risk"), s("rules"), s("advisor"), s("safety_out"), s("audit")], sections: [{ kind: "risk", title: "Ước lượng nguy cơ", text: "13%" }] },
     ],
   },
 ];
@@ -311,7 +311,7 @@ describe("useFactoryRun: recorded scenarios", () => {
     expect(result.current.state.turn).toBe(2);
     await flush(STEP_MS * 10);
     const { state } = result.current;
-    expect(state.litTracks).toEqual(["in", "main1", "toIntake", "toRisk", "toAdvisor", "toSafeOut", "out"]);
+    expect(state.litTracks).toEqual(["in", "main1", "toIntake", "toRisk", "toRules", "toAdvisor", "toSafeOut", "toAudit", "out"]);
     expect(state.stations.memory).toBe("skipped");
     expect(result.current.busy).toBe(false);
     expect(calls).toHaveLength(0);

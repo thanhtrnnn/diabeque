@@ -30,9 +30,11 @@ export function buildCharacter(id: AgentId): CharacterRig {
     orchestrator: () => new SwitchOperatorRig(),
     intake: () => new RecordKeeperRig(),
     risk: () => new ElderRig(),
+    rules: () => new InspectorRig(),
     knowledge: () => new MinerRig(),
     advisor: () => new MixerRig(),
     safety_out: () => new InspectorRig(),
+    audit: () => new RecordKeeperRig(),
   }[id]();
   rig.root.name = `character:${id}`;
   return rig;

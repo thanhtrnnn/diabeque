@@ -7,9 +7,9 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { ChatStreamProtocolError, parseAgentStep, type ChatRequest, type ChatStreamAnswer } from "@/lib/chat-stream-contract";
+import { ChatStreamProtocolError, parseAgentStep, type AnswerSection, type ChatRequest, type ChatStreamAnswer } from "@/lib/chat-stream-contract";
 import { readChatStreamV1 } from "@/lib/chat-stream-parser";
-import { initialRunState, reduce, type RunEvent, type RunState } from "./run-state";
+import { initialRunState, reduce, type RunAnswerSection, type RunEvent, type RunState } from "./run-state";
 import { SCENARIOS, awaitsIntake, type Scenario } from "./scenarios";
 
 /** Shortest time one step stays on screen before the next is revealed. */
@@ -31,6 +31,26 @@ export interface FactoryRun {
   reset(): void;
   busy: boolean;
   pendingSteps: number;
+}
+
+/** Flattens streamed sections to plain text, citations as [n]; the "Căn cứ" list stays (it names the sources). */
+const plainSections = (sections: AnswerSection[]): RunAnswerSection[] =>
+  sections.map((s) => ({
+    kind: s.kind,
+    title: s.title,
+    text: s.content.map((t) => (t.type === "text" ? t.text : `[${t.label}]`)).join(""),
+  }));
+
+/** Recorded sections still carry `[[cite:x]]` markers; number them in order of first use. */
+function numberCitations(sections: RunAnswerSection[]): RunAnswerSection[] {
+  const labels = new Map<string, number>();
+  return sections.map((s) => ({
+    ...s,
+    text: s.text.replace(/\[\[cite:([^\]]+)\]\]/g, (_, id: string) => {
+      if (!labels.has(id)) labels.set(id, labels.size + 1);
+      return `[${labels.get(id)}]`;
+    }),
+  }));
 }
 
 /** Thrown inside the stream callback when the run it belongs to was replaced. */
@@ -121,15 +141,15 @@ export function useFactoryRun(opts: { reducedMotion: boolean; scenarios?: Scenar
     return { gen: generation.current, wasRunning };
   }, []);
 
-  const begin = useCallback(() => {
+  const begin = useCallback((question = "") => {
     const { gen } = stop();
     turn.current += 1;
-    apply({ type: "start", turn: turn.current });
+    apply({ type: "start", turn: turn.current, question });
     return gen;
   }, [apply, stop]);
 
   const ask = useCallback((message: string, simulateLlmDown: boolean) => {
-    const gen = begin();
+    const gen = begin(message);
     conversationId.current ??= crypto.randomUUID();
     const request: ChatRequest = {
       message,
@@ -171,7 +191,7 @@ export function useFactoryRun(opts: { reducedMotion: boolean; scenarios?: Scenar
             push({ type: "streamError", message: error.message });
           } else if (event === "answer.final") {
             const answer = data.answer as ChatStreamAnswer;
-            push({ type: "finish", awaitingIntake: answer.sections.at(-1)?.kind === "question" });
+            push({ type: "finish", awaitingIntake: answer.sections.at(-1)?.kind === "question", sections: plainSections(answer.sections) });
           } else if (generation.current !== gen) throw new StaleRun();
         });
         if (generation.current !== gen) return;
@@ -197,11 +217,11 @@ export function useFactoryRun(opts: { reducedMotion: boolean; scenarios?: Scenar
   const play = useCallback((scenarioId: string) => {
     const scenario = scenarios.find((item) => item.id === scenarioId);
     if (!scenario) return;
-    begin();
+    begin(scenario.turns[0]?.message);
     scenario.turns.forEach((item, index) => {
-      if (index > 0) queue.current.push({ type: "start", turn: (turn.current += 1) });
+      if (index > 0) queue.current.push({ type: "start", turn: (turn.current += 1), question: item.message });
       for (const step of item.steps) queue.current.push({ type: "step", step });
-      queue.current.push({ type: "finish", awaitingIntake: awaitsIntake(item) });
+      queue.current.push({ type: "finish", awaitingIntake: awaitsIntake(item), sections: numberCitations(item.sections) });
     });
     pump();
   }, [begin, pump, scenarios]);

@@ -22,7 +22,7 @@ const PLINTH_H = 0.3;
 const PLINTH_R = 1.05;
 
 export const stationPosition = (id: StationId) => uvToWorld(STATIONS[id].u, STATIONS[id].v);
-const uvToWorld = (u: number, v: number) => new THREE.Vector3((u - 3.5) * SX, 0, -v * SZ);
+const uvToWorld = (u: number, v: number) => new THREE.Vector3((u - 4.5) * SX, 0, -v * SZ);
 
 export interface RoomHandles {
   kind: StationKind;
@@ -155,6 +155,8 @@ const FLOOR_ANCHOR: Partial<Record<StationId, [number, number]>> = {
   orchestrator: [-0.85, 1.1],
   risk: [-0.95, 0.9],
   safety_out: [-0.95, 1.0],
+  rules: [-0.95, 0.9],
+  audit: [-0.95, 1.0],
 };
 
 export interface StateTextures { crackle: THREE.Texture; crack: THREE.Texture; book: THREE.SpriteMaterial; warning: THREE.SpriteMaterial }
@@ -343,7 +345,7 @@ export function buildWorld(scene: THREE.Scene): WorldHandles {
   };
 
   const knowledgeAt = stationPosition("knowledge");
-  const cell = { x0: -7.6, x1: stationPosition("advisor").x + 0.9, y0: -2.2, y1: -0.4, z0: knowledgeAt.z - 1.1, z1: knowledgeAt.z + 1.35 };
+  const cell = { x0: stationPosition("safety_in").x - 0.725, x1: stationPosition("advisor").x + 0.9, y0: -2.2, y1: -0.4, z0: knowledgeAt.z - 1.1, z1: knowledgeAt.z + 1.35 };
   const bounds = buildPlatform(scene, m, cell);
   const cellar = buildCellar(m, cell, knowledgeAt.x, stationPosition("advisor").x);
   scene.add(cellar.group);

@@ -12,20 +12,22 @@ export const STATIONS: Record<StationId, { u: number; v: number; kind: StationKi
   intake: { u: 3, v: 0, kind: "llm" },
   knowledge: { u: 3, v: -2, kind: "llm" },
   risk: { u: 4, v: 0, kind: "code" },
-  advisor: { u: 5, v: 0, kind: "llm" },
-  safety_out: { u: 6, v: 0, kind: "code" },
-  exit: { u: 7, v: 0, kind: "prop" },
+  rules: { u: 5, v: 0, kind: "code" },
+  advisor: { u: 6, v: 0, kind: "llm" },
+  safety_out: { u: 7, v: 0, kind: "code" },
+  audit: { u: 8, v: 0, kind: "code" },
+  exit: { u: 9, v: 0, kind: "prop" },
   /** The conversation's stored profile, behind intake: where a waiting turn parks. */
   memory: { u: 3, v: 3, kind: "prop" },
 };
 
 export type TrackId =
-  | "in" | "main1" | "toIntake" | "toRisk" | "toAdvisor" | "toSafeOut" | "out"
+  | "in" | "main1" | "toIntake" | "toRisk" | "toRules" | "toAdvisor" | "toSafeOut" | "toAudit" | "out"
   | "emergency" | "direct" | "toKnowledge" | "knowledgeOut" | "missing" | "loop";
 
 /**
  * `via` holds the bends between the two stations, endpoints excluded. Back lanes: direct v=1, missing v=1.5,
- * emergency v=2, loop v=3. The three back lanes drop into the exit check side by side (u 5.7 / 6 / 6.3) so their
+ * emergency v=2, loop v=3. The three back lanes drop into the exit check side by side (u 6.7 / 7 / 7.3) so their
  * last legs never lie on top of each other.
  */
 export const TRACKS: Record<TrackId, { from: StationId; to: StationId; via: Array<[number, number]> }> = {
@@ -33,15 +35,17 @@ export const TRACKS: Record<TrackId, { from: StationId; to: StationId; via: Arra
   main1: { from: "safety_in", to: "orchestrator", via: [] },
   toIntake: { from: "orchestrator", to: "intake", via: [] },
   toRisk: { from: "intake", to: "risk", via: [] },
-  toAdvisor: { from: "risk", to: "advisor", via: [] },
+  toRules: { from: "risk", to: "rules", via: [] },
+  toAdvisor: { from: "rules", to: "advisor", via: [] },
   toSafeOut: { from: "advisor", to: "safety_out", via: [] },
-  out: { from: "safety_out", to: "exit", via: [] },
-  emergency: { from: "safety_in", to: "safety_out", via: [[1, 2], [6.3, 2], [6.3, 0.35]] },
-  direct: { from: "orchestrator", to: "safety_out", via: [[2, 1], [5.7, 1], [5.7, 0.35]] },
+  toAudit: { from: "safety_out", to: "audit", via: [] },
+  out: { from: "audit", to: "exit", via: [] },
+  emergency: { from: "safety_in", to: "safety_out", via: [[1, 2], [7.3, 2], [7.3, 0.35]] },
+  direct: { from: "orchestrator", to: "safety_out", via: [[2, 1], [6.7, 1], [6.7, 0.35]] },
   toKnowledge: { from: "orchestrator", to: "knowledge", via: [[2, -2]] },
-  knowledgeOut: { from: "knowledge", to: "safety_out", via: [[6, -2]] },
-  missing: { from: "intake", to: "safety_out", via: [[3, 1.5], [6, 1.5]] },
-  loop: { from: "exit", to: "memory", via: [[7, 3]] },
+  knowledgeOut: { from: "knowledge", to: "safety_out", via: [[7, -2]] },
+  missing: { from: "intake", to: "safety_out", via: [[3, 1.5], [7, 1.5]] },
+  loop: { from: "exit", to: "memory", via: [[9, 3]] },
 };
 
 /** Each tool in `backend/app/agents/tools.py::FUNCTIONS`, keyed to the node in `nodes.py` that calls it. */
@@ -53,4 +57,6 @@ export const TOOL_STATION: Record<string, AgentId> = {
   search_knowledge: "knowledge",
   search_passages: "knowledge",
   get_recommendations: "advisor",
+  evaluate_rules: "rules",
+  write_audit: "audit",
 };

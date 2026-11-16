@@ -17,8 +17,19 @@ export interface LogEntry {
   step?: AgentStep;
 }
 
+/** One answer section as plain text (citations already rendered as [n]). */
+export interface RunAnswerSection {
+  kind: string;
+  title: string;
+  text: string;
+}
+
 export interface RunState {
   turn: number;
+  /** The message this turn answers (empty for a turn with no recorded message). */
+  question: string;
+  /** The final answer of the turn, null until `finish` brings one. */
+  answer: RunAnswerSection[] | null;
   stations: Record<StationId, StationState>;
   litTracks: TrackId[];
   current: StationId | null;
@@ -28,11 +39,11 @@ export interface RunState {
 }
 
 export type RunEvent =
-  | { type: "start"; turn: number }
+  | { type: "start"; turn: number; question?: string }
   | { type: "step"; step: AgentStep }
   | { type: "agentError"; node: string; errorType: string }
   | { type: "streamError"; message: string }
-  | { type: "finish"; awaitingIntake: boolean }
+  | { type: "finish"; awaitingIntake: boolean; sections?: RunAnswerSection[] }
   /** The runner stopped this turn on purpose (new question, new scenario, stop button): nothing failed. */
   | { type: "cancel" }
   | { type: "reset" };
@@ -46,7 +57,7 @@ function idleStations(): Record<StationId, StationState> {
 }
 
 export function initialRunState(): RunState {
-  return { turn: 0, stations: idleStations(), litTracks: [], current: null, caption: IDLE_CAPTION, log: [], lastSteps: {} };
+  return { turn: 0, question: "", answer: null, stations: idleStations(), litTracks: [], current: null, caption: IDLE_CAPTION, log: [], lastSteps: {} };
 }
 
 /** Agents this turn has reached, in graph order (knowledge never shares a turn with intake/risk/advisor). */
@@ -89,7 +100,8 @@ export function reduce(state: RunState, event: RunEvent): RunState {
     case "start": {
       const stations = { ...idleStations(), gate: "active" as const };
       const caption = `Lượt ${event.turn}: tin nhắn vào cổng.`;
-      return withLog({ ...state, turn: event.turn, stations, litTracks: [], current: "gate" }, { station: "gate", level: "info", text: caption }, caption);
+      const next = { ...state, turn: event.turn, question: event.question ?? "", answer: null, stations, litTracks: [], current: "gate" as const };
+      return withLog(next, { station: "gate", level: "info", text: caption }, caption);
     }
     case "step":
       return onStep(state, event.step);
@@ -127,7 +139,7 @@ export function reduce(state: RunState, event: RunEvent): RunState {
           ? `Lượt ${state.turn} dừng ở bước thu thập: chờ người dùng bổ sung thông tin.`
           : `Lượt ${state.turn} hoàn tất.`;
       return withLog(
-        { ...state, stations, litTracks, current: null },
+        { ...state, stations, litTracks, current: null, answer: event.sections?.length ? event.sections : state.answer },
         { station: failed ? null : "exit", level: failed ? "error" : "info", text },
         text,
       );

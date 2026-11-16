@@ -1,5 +1,5 @@
 /** Static facts about the supervisor graph, mirroring `backend/app/agents/{state,graph,nodes}.py`. A test checks the ids. */
-export const AGENT_IDS = ["safety_in", "orchestrator", "intake", "risk", "knowledge", "advisor", "safety_out"] as const;
+export const AGENT_IDS = ["safety_in", "orchestrator", "intake", "risk", "rules", "knowledge", "advisor", "safety_out", "audit"] as const;
 export type AgentId = typeof AGENT_IDS[number];
 
 /** Vietnamese labels as `backend/app/agents/state.py::AGENT_LABELS`; the live list from `/api/v1/agents` wins when it loads. */
@@ -8,9 +8,11 @@ export const AGENT_LABELS: Record<AgentId, string> = {
   orchestrator: "Điều phối",
   intake: "Thu thập thông tin",
   risk: "Dự đoán nguy cơ",
+  rules: "Luật sàng lọc",
   knowledge: "Tra cứu tri thức",
   advisor: "Tư vấn",
   safety_out: "An toàn (ra)",
+  audit: "Giám sát",
 };
 
 export interface AgentEntry {
@@ -52,6 +54,10 @@ export const AGENT_DETAILS: Record<AgentId, AgentDetail> = {
     role: "Chạy mô hình phân loại trên hồ sơ BRFSS: ba nhóm tình trạng, hoặc Type 1 và Type 2 nếu người dùng đã được chẩn đoán. Trả xác suất đã khôi phục tần suất của dữ liệu.",
     tools: ["predict_diabetes_risk", "predict_diabetes_type"],
   },
+  rules: {
+    role: "Đối chiếu hồ sơ và kết quả mô hình với luật sàng lọc tường minh (ADA 2025: BMI ≥ 23 cho người châu Á, ≥ 35 tuổi, tăng huyết áp, mỡ máu, ít vận động; ngưỡng HbA1c và đường huyết đói nếu người dùng nhập). Gắn cờ rà soát khi luật và mô hình không thống nhất.",
+    tools: ["evaluate_rules (luật Python, không gọi mô hình)"],
+  },
   knowledge: {
     role: "Trả lời câu hỏi kiến thức bằng RAG trên đồ thị tri thức: truy xuất BM25, vector và đồ thị, sinh câu trả lời, rồi loại mọi ý không còn trích dẫn hợp lệ.",
     tools: ["search_knowledge"],
@@ -63,6 +69,10 @@ export const AGENT_DETAILS: Record<AgentId, AgentDetail> = {
   safety_out: {
     role: "Kiểm lại phần do mô hình viết: bỏ câu có liều thuốc, bỏ câu kết luận chẩn đoán cho cá nhân, bỏ phần không còn trích dẫn. Ghi cờ cảnh báo vào kết quả.",
     tools: ["Luật regex, không gọi mô hình"],
+  },
+  audit: {
+    role: "Ghi nhật ký thực thi của mỗi lượt (mã yêu cầu, trạng thái, phiên bản mô hình, thời gian, dự phòng, bằng chứng) vào results/audit.jsonl, không lưu nội dung tin nhắn. Thống kê ở /api/v1/audit.",
+    tools: ["write_audit"],
   },
 };
 

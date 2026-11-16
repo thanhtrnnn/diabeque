@@ -50,8 +50,8 @@ const NAMES: Record<StationId, string> = { ...AGENT_LABELS, gate: "Cửa vào", 
  * starts with its chip text, so a voice command naming what is on screen still finds the button.
  */
 const SHORT: Record<StationId, string> = {
-  gate: "Cửa vào", safety_in: "An toàn (vào)", orchestrator: "Điều phối", intake: "Thu thập", risk: "Dự đoán",
-  knowledge: "Tra cứu", advisor: "Tư vấn", safety_out: "An toàn (ra)", exit: "Trả lời", memory: "Két nhớ",
+  gate: "Cửa vào", safety_in: "An toàn (vào)", orchestrator: "Điều phối", intake: "Thu thập", risk: "Dự đoán", rules: "Luật",
+  knowledge: "Tra cứu", advisor: "Tư vấn", safety_out: "An toàn (ra)", audit: "Giám sát", exit: "Trả lời", memory: "Két nhớ",
 };
 const STATE_TEXT: Record<StationState, string> = {
   idle: "đang chờ", active: "đang chạy", done: "đã chạy", skipped: "bỏ qua", fallback: "chạy dự phòng", error: "lỗi",
@@ -60,7 +60,7 @@ const STATE_ICON: Record<StationState, typeof CircleIcon> = {
   idle: CircleIcon, active: LightningIcon, done: CheckCircleIcon, skipped: MinusCircleIcon, fallback: BookOpenIcon, error: WarningIcon,
 };
 /** Tab order follows the graph: entry, the two branches, the exit, then the memory safe. */
-const TAB_ORDER: StationId[] = ["gate", "safety_in", "orchestrator", "knowledge", "intake", "risk", "advisor", "safety_out", "exit", "memory"];
+const TAB_ORDER: StationId[] = ["gate", "safety_in", "orchestrator", "knowledge", "intake", "risk", "rules", "advisor", "safety_out", "audit", "exit", "memory"];
 
 function webglAvailable(): boolean {
   if (typeof window === "undefined" || typeof window.WebGLRenderingContext === "undefined") return false;
@@ -225,7 +225,7 @@ const LLM_STATIONS = ROOM_IDS.filter((id) => STATIONS[id].kind === "llm");
 const AGENTS = new Set<string>(AGENT_IDS);
 /** Workers are modelled about one unit tall; this makes them read at 1280×720 on a projector. Those on a plinth stay a little smaller. */
 const CHARACTER_SCALE: Record<AgentId, number> = {
-  safety_in: 1.75, orchestrator: 1.7, intake: 1.55, risk: 1.7, knowledge: 1.75, advisor: 1.55, safety_out: 1.7,
+  safety_in: 1.75, orchestrator: 1.7, intake: 1.55, risk: 1.7, rules: 1.7, knowledge: 1.75, advisor: 1.55, safety_out: 1.7, audit: 1.55,
 };
 /** Height of a room's plinth top above its station origin (world.ts PLINTH_H). */
 const PLINTH_TOP = 0.3;

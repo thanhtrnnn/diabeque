@@ -19,7 +19,7 @@ describe("layout", () => {
   });
 
   it("orders the main line left to right with knowledge in front of intake", () => {
-    const order = ["gate", "safety_in", "orchestrator", "intake", "risk", "advisor", "safety_out", "exit"] as const;
+    const order = ["gate", "safety_in", "orchestrator", "intake", "risk", "rules", "advisor", "safety_out", "audit", "exit"] as const;
     order.slice(1).forEach((id, i) => expect(STATIONS[id].u).toBeGreaterThan(STATIONS[order[i]].u));
     expect(STATIONS.knowledge.v).toBeLessThan(STATIONS.intake.v);
   });
@@ -31,12 +31,13 @@ describe("layout", () => {
     }
   });
 
-  it("maps the seven backend tools to the node that calls them", () => {
+  it("maps the backend tools to the node that calls them", () => {
     expect(TOOL_STATION).toEqual({
       compute_bmi: "intake", validate_profile: "intake",
       predict_diabetes_risk: "risk", predict_diabetes_type: "risk",
       search_knowledge: "knowledge", search_passages: "knowledge",
       get_recommendations: "advisor",
+      evaluate_rules: "rules", write_audit: "audit",
     });
   });
 });
@@ -57,8 +58,8 @@ describe("routeFor", () => {
   });
 
   it("routes a full risk assessment and a direct reply", () => {
-    expect(routeFor(["safety_in", "orchestrator", "intake", "risk", "advisor", "safety_out"], { loopsBack: false }))
-      .toEqual(["in", "main1", "toIntake", "toRisk", "toAdvisor", "toSafeOut", "out"]);
+    expect(routeFor(["safety_in", "orchestrator", "intake", "risk", "rules", "advisor", "safety_out", "audit"], { loopsBack: false }))
+      .toEqual(["in", "main1", "toIntake", "toRisk", "toRules", "toAdvisor", "toSafeOut", "toAudit", "out"]);
     expect(routeFor(["safety_in", "orchestrator", "safety_out"], { loopsBack: false })).toEqual(["in", "main1", "direct", "out"]);
   });
 
@@ -75,6 +76,16 @@ describe("routeFor", () => {
 });
 
 describe("reduce", () => {
+  it("keeps the question and shows the final answer; a new turn clears it", () => {
+    const sections = [{ kind: "explain", title: "Giải thích", text: "HbA1c phản ánh đường huyết 2–3 tháng [1]." }];
+    let s = play([{ type: "start", turn: 1, question: "HbA1c là gì?" }, { type: "finish", awaitingIntake: false, sections }]);
+    expect(s.question).toBe("HbA1c là gì?");
+    expect(s.answer).toEqual(sections);
+    s = reduce(s, { type: "start", turn: 2, question: "Còn FPG?" });
+    expect(s.answer).toBeNull();
+    expect(s.question).toBe("Còn FPG?");
+  });
+
   it("marks a station that fell back", () => {
     const s = play([{ type: "start", turn: 1 }, { type: "step", step: step("safety_in") }, { type: "step", step: step("orchestrator", { fallback: "rules" }) }]);
     expect(s.stations.orchestrator).toBe("fallback");

@@ -2,7 +2,7 @@
 
 /** The factory's controls and read-outs: question field and scenario chips on top, caption ticker, run log. */
 import {
-  ArrowClockwiseIcon, BookOpenIcon, CaretDoubleLeftIcon, CaretDoubleRightIcon, CloudSlashIcon, FastForwardIcon,
+  ArrowClockwiseIcon, BookOpenIcon, CaretDoubleLeftIcon, CaretDownIcon, ChatTextIcon, CaretDoubleRightIcon, CloudSlashIcon, FastForwardIcon,
   PaperPlaneRightIcon, StopIcon, WarningIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -10,7 +10,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { formatDuration } from "@/lib/agent-trace";
 import { AGENT_LABELS, type AgentId } from "@/lib/agents";
 import { fallbackPhrase } from "@/lib/factory/cast";
-import type { LogEntry } from "@/lib/factory/run-state";
+import type { LogEntry, RunAnswerSection } from "@/lib/factory/run-state";
 import type { Scenario } from "@/lib/factory/scenarios";
 import type { FactoryRun } from "@/lib/factory/use-factory-run";
 import styles from "./factory.module.css";
@@ -189,5 +189,41 @@ function StepEntry({ entry, onSelect }: { entry: LogEntry & { station: AgentId }
         </span>
       )}
     </>
+  );
+}
+
+interface AnswerProps {
+  turn: number;
+  question: string;
+  answer: RunAnswerSection[] | null;
+  busy: boolean;
+}
+
+/** Under the ticker: what the user asked and what the agents answered (the LLM / fallback text of the turn). */
+export function FactoryAnswer({ turn, question, answer, busy }: AnswerProps) {
+  const [open, setOpen] = useState(true);
+  if (turn === 0) return null;
+  return (
+    <section className={styles.answer} aria-label="Câu trả lời" data-open={open ? "" : undefined}>
+      <button type="button" className={styles.answerHead} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <ChatTextIcon weight="fill" aria-hidden />
+        <span className={styles.answerQuestion}>{question ? `“${question}”` : `Lượt ${turn}`}</span>
+        <CaretDownIcon weight="bold" aria-hidden className={styles.answerCaret} />
+      </button>
+      {open && (
+        <div className={styles.answerBody} aria-live="polite">
+          {answer ? (
+            answer.map((section, index) => (
+              <div key={index} className={styles.answerSection} data-kind={section.kind}>
+                <h3 className={styles.answerTitle}>{section.title}</h3>
+                <p className={styles.answerText}>{section.text}</p>
+              </div>
+            ))
+          ) : (
+            <p className={styles.answerWait}>{busy ? "Các agent đang soạn câu trả lời…" : "Lượt này không có câu trả lời."}</p>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

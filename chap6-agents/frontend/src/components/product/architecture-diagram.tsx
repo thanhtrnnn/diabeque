@@ -13,8 +13,10 @@ const NODES: Record<AgentId, { x: number; y: number; tone: Tone }> = {
   knowledge: { x: 110, y: 336, tone: "worker" },
   intake: { x: 350, y: 336, tone: "worker" },
   risk: { x: 350, y: 442, tone: "worker" },
-  advisor: { x: 350, y: 548, tone: "worker" },
-  safety_out: { x: 240, y: 664, tone: "safety" },
+  rules: { x: 350, y: 548, tone: "worker" },
+  advisor: { x: 350, y: 654, tone: "worker" },
+  safety_out: { x: 240, y: 770, tone: "safety" },
+  audit: { x: 240, y: 876, tone: "worker" },
 };
 
 /** Edges that always run (`always`), branches chosen at run time (`branch`) and the emergency shortcut. */
@@ -24,20 +26,22 @@ const EDGES: Array<{ id: string; d: string; kind: "always" | "branch" | "emergen
   { id: "orchestrator-knowledge", d: "M210 238 C210 280 110 270 110 310", kind: "branch" },
   { id: "orchestrator-intake", d: "M270 238 C270 280 350 270 350 310", kind: "branch" },
   { id: "intake-risk", d: "M350 360 V416", kind: "branch" },
-  { id: "risk-advisor", d: "M350 466 V522", kind: "always" },
-  { id: "advisor-out", d: "M340 572 C340 620 280 610 280 638", kind: "always" },
-  { id: "knowledge-out", d: "M110 360 C110 560 200 590 200 638", kind: "always" },
-  { id: "out-end", d: "M240 688 V706", kind: "always" },
-  { id: "orchestrator-out", d: "M170 214 H16 V664 H170", kind: "branch" },
-  { id: "intake-out", d: "M420 336 H442 V652 H310", kind: "branch" },
-  { id: "emergency", d: "M310 100 H466 V676 H310", kind: "emergency" },
+  { id: "risk-rules", d: "M350 466 V522", kind: "always" },
+  { id: "rules-advisor", d: "M350 572 V628", kind: "always" },
+  { id: "advisor-out", d: "M340 678 C340 726 280 716 280 744", kind: "always" },
+  { id: "knowledge-out", d: "M110 360 C110 666 200 696 200 744", kind: "always" },
+  { id: "out-audit", d: "M240 794 V850", kind: "always" },
+  { id: "audit-end", d: "M240 900 V918", kind: "always" },
+  { id: "orchestrator-out", d: "M170 214 H16 V770 H170", kind: "branch" },
+  { id: "intake-out", d: "M420 336 H442 V758 H310", kind: "branch" },
+  { id: "emergency", d: "M310 100 H466 V782 H310", kind: "emergency" },
 ];
 
 export function ArchitectureDiagram({ labels = AGENT_LABELS }: { labels?: Partial<Record<string, string>> }) {
   return (
     <svg
       className={styles.diagram}
-      viewBox="0 0 480 740"
+      viewBox="0 0 480 952"
       role="img"
       aria-labelledby="architecture-diagram-title"
       aria-describedby="architecture-diagram-desc"
@@ -45,7 +49,7 @@ export function ArchitectureDiagram({ labels = AGENT_LABELS }: { labels?: Partia
       <title id="architecture-diagram-title">Sơ đồ kiến trúc giám sát nhiều agent</title>
       <desc id="architecture-diagram-desc">
         An toàn (vào) kiểm tin nhắn rồi chuyển cho Điều phối. Điều phối chọn nhánh tra cứu tri thức, hoặc nhánh thu thập thông tin,
-        dự đoán nguy cơ và tư vấn. Mọi nhánh đều kết thúc ở An toàn (ra). Khi có dấu hiệu khẩn cấp, An toàn (vào) đi thẳng tới An toàn (ra).
+        dự đoán nguy cơ, đối chiếu luật sàng lọc và tư vấn. Mọi nhánh đều qua An toàn (ra) rồi Giám sát ghi nhật ký. Khi có dấu hiệu khẩn cấp, An toàn (vào) đi thẳng tới An toàn (ra).
       </desc>
       <defs>
         <marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
@@ -70,13 +74,13 @@ export function ArchitectureDiagram({ labels = AGENT_LABELS }: { labels?: Partia
       <text className={styles.edgeLabel} x="24" y="272">ngoài phạm vi</text>
       <text className={styles.edgeLabel} x="100" y="296" textAnchor="end">kiến thức</text>
       <text className={styles.edgeLabel} x="362" y="296">nguy cơ</text>
-      <text className={styles.edgeLabel} x="436" y="610" textAnchor="end">thiếu thông tin</text>
+      <text className={styles.edgeLabel} x="436" y="716" textAnchor="end">thiếu thông tin</text>
 
       <g className={styles.terminal}>
         <rect x={240 - 48} y={12} width={96} height={28} rx={14} />
         <text x={240} y={31} textAnchor="middle">Bắt đầu</text>
-        <rect x={240 - 48} y={706} width={96} height={28} rx={14} />
-        <text x={240} y={725} textAnchor="middle">Kết thúc</text>
+        <rect x={240 - 48} y={918} width={96} height={28} rx={14} />
+        <text x={240} y={937} textAnchor="middle">Kết thúc</text>
       </g>
 
       {AGENT_IDS.map((id) => {

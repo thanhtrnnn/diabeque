@@ -23,7 +23,7 @@ export const ANSWER_STATES = ["answered", "needs_info", "emergency", "insufficie
 export type AnswerState = typeof ANSWER_STATES[number];
 export type SourceRole = "supporting" | "context";
 /** Kinds the backend puts in `Section.kind`, plus `basis` which `main.py` appends after the agents' sections. */
-export const SECTION_KINDS = ["conclusion", "basis", "notice", "risk", "advice", "question", "emergency"] as const;
+export const SECTION_KINDS = ["conclusion", "basis", "notice", "risk", "rules", "advice", "question", "emergency"] as const;
 export type SectionKind = typeof SECTION_KINDS[number];
 export type EvidenceState = "sufficient" | "insufficient";
 export type RetrievalBranch = "bm25" | "vector" | "graph";
@@ -96,6 +96,11 @@ export interface AgentStep {
   code?: CodeRef;
   /** What the agent fell back to when its model failed (`"rules"`, `"passages"`, ...); null when it did not. */
   fallback?: string | null;
+  /** Message contract of the architecture spec (§6.1): request id, ok / fallback, version, evidence ids. */
+  request_id?: string;
+  status?: "ok" | "fallback";
+  version?: string;
+  evidence?: string[];
 }
 
 /** `agent.error`: the node that raised, sent just before `stream.error`. */
@@ -302,6 +307,10 @@ export function parseAgentStep(value: unknown): AgentStep | null {
     agent: value.agent, label: value.label, summary: value.summary, tools: tools as AgentToolCall[], ms: value.ms,
     ...(code && { code }),
     ...((fallback === null || text(fallback)) && { fallback }),
+    ...(text(value.request_id) && { request_id: value.request_id }),
+    ...((value.status === "ok" || value.status === "fallback") && { status: value.status }),
+    ...(text(value.version) && { version: value.version }),
+    ...(Array.isArray(value.evidence) && value.evidence.every(text) && { evidence: value.evidence as string[] }),
   };
 }
 
