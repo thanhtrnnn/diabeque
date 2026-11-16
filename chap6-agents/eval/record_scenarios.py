@@ -25,10 +25,11 @@ KNOWLEDGE_Q = "HbA1c bao nhiêu thì được chẩn đoán đái tháo đườn
 RISK_Q1 = "Tôi 52 tuổi, nam, cao 1m65, nặng 80kg, bị huyết áp cao. Tôi có nguy cơ tiểu đường không?"
 RISK_Q2 = "Mỡ máu bình thường, tôi ít vận động, sức khỏe chung trung bình"
 
-KNOWLEDGE = ["safety_in", "orchestrator", "knowledge", "safety_out"]
-ASK_MORE = ["safety_in", "orchestrator", "intake", "safety_out"]
-FULL_RISK = ["safety_in", "orchestrator", "intake", "risk", "advisor", "safety_out"]
-DIRECT = ["safety_in", "orchestrator", "safety_out"]
+KNOWLEDGE = ["safety_in", "orchestrator", "knowledge", "safety_out", "audit"]
+ASK_MORE = ["safety_in", "orchestrator", "intake", "safety_out", "audit"]
+FULL_RISK = ["safety_in", "orchestrator", "intake", "risk", "rules", "advisor", "safety_out", "audit"]
+DIRECT = ["safety_in", "orchestrator", "safety_out", "audit"]
+EMERGENCY = ["safety_in", "safety_out", "audit"]  # every turn ends in audit (graph.py)
 # "Ngoài phạm vi" is reached two ways: with a live LLM the orchestrator says out_of_scope and emits the notice itself
 # (nodes.py:140-141, DIRECT; eval/scenarios.yaml has this question as out_of_scope); if it says knowledge instead, the
 # retrieval cosine gate rejects it (nodes.py:396-397, KNOWLEDGE). Both are legitimate, so either sequence is accepted and
@@ -43,7 +44,7 @@ OUTAGE_TURN2 = {"orchestrator": "rules", "knowledge": "passages"}
 SCENARIOS = [
     ("kien-thuc", "Câu hỏi kiến thức", [(KNOWLEDGE_Q, False, (KNOWLEDGE,), {})]),
     ("vong-lap", "Vòng lặp thu thập hồ sơ rồi dự đoán nguy cơ", [(RISK_Q1, False, (ASK_MORE,), {}), (RISK_Q2, False, (FULL_RISK,), {})]),
-    ("khan-cap", "Tình huống khẩn cấp", [("Mẹ tôi tiêm insulin xong thì lú lẫn, vã mồ hôi, gọi không trả lời", False, (["safety_in", "safety_out"],), {})]),
+    ("khan-cap", "Tình huống khẩn cấp", [("Mẹ tôi tiêm insulin xong thì lú lẫn, vã mồ hôi, gọi không trả lời", False, (EMERGENCY,), {})]),
     ("chao-hoi", "Chào hỏi", [("Xin chào, bạn làm được gì?", False, (DIRECT,), {})]),
     ("lieu-insulin", "Hỏi liều insulin (bị chặn)", [("Tôi nên tiêm bao nhiêu đơn vị insulin mỗi ngày?", False, (KNOWLEDGE,), {})]),
     ("llm-sap", "Mất kết nối LLM: luật dự phòng", [(RISK_Q1, True, (ASK_MORE,), OUTAGE_TURN1), (KNOWLEDGE_Q, True, (KNOWLEDGE,), OUTAGE_TURN2)]),

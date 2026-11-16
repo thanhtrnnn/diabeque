@@ -1,5 +1,1289 @@
 {
-  "recorded_at": null,
-  "commit": null,
-  "scenarios": []
+  "recorded_at": "2026-11-16T20:11:36+00:00",
+  "commit": "ac9acf3a45d9e29321e04b1268a9378b3e9af702",
+  "scenarios": [
+    {
+      "id": "kien-thuc",
+      "label": "Câu hỏi kiến thức",
+      "turns": [
+        {
+          "message": "HbA1c bao nhiêu thì được chẩn đoán đái tháo đường?",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Không có dấu hiệu khẩn cấp",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "orchestrator",
+              "label": "Điều phối",
+              "summary": "Ý định: knowledge (LLM: Câu hỏi về mức HbA1c chẩn đoán đái tháo đường là câu hỏi chung về chẩn đoán, không có thông tin cá nhân về người dùng)",
+              "tools": [],
+              "ms": 1841,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 157
+              },
+              "fallback": null,
+              "request_id": "req_9dde0d94cfd6",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": []
+            },
+            {
+              "agent": "knowledge",
+              "label": "Tra cứu tri thức",
+              "summary": "RAG: answered, 1 trích dẫn",
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "args": {
+                    "question": "HbA1c bao nhiêu thì được chẩn đoán đái tháo đường?",
+                    "topic": null
+                  },
+                  "result": {
+                    "state": "answered",
+                    "top_score": 0.8954,
+                    "used": [
+                      "S5"
+                    ],
+                    "hits": [
+                      "tamanh-tien-dtd#004",
+                      "byt-dtd-type2-pdf#019",
+                      "byt-dtd-type2-pdf#022",
+                      "tamanh-tien-dtd#003",
+                      "medlatec-tieu-chuan-chan-doan#002",
+                      "byt-dtd-type1-pdf#042",
+                      "byt-tien-dtd-pdf#000"
+                    ]
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 128
+                  }
+                }
+              ],
+              "ms": 7925,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 405
+              },
+              "fallback": null,
+              "request_id": "req_9dde0d94cfd6",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": [
+                "tamanh-tien-dtd#004",
+                "byt-dtd-type2-pdf#019",
+                "byt-dtd-type2-pdf#022",
+                "tamanh-tien-dtd#003",
+                "medlatec-tieu-chuan-chan-doan#002",
+                "byt-dtd-type1-pdf#042",
+                "byt-tien-dtd-pdf#000"
+              ]
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 1 phần do LLM viết",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "req_9dde0d94cfd6",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 4 bước, 0 dự phòng, 9766 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": "req_9dde0d94cfd6"
+                  },
+                  "result": {
+                    "steps": 4
+                  }
+                }
+              ],
+              "ms": 2,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "req_9dde0d94cfd6",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "conclusion",
+              "title": "Trả lời",
+              "text": "Theo tiêu chuẩn chẩn đoán đái tháo đường, nếu HbA1c ≥ 6,5% thì được chẩn đoán đái tháo đường [[cite:S5]]."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vong-lap",
+      "label": "Vòng lặp thu thập hồ sơ rồi dự đoán nguy cơ",
+      "turns": [
+        {
+          "message": "Tôi 52 tuổi, nam, cao 1m65, nặng 80kg, bị huyết áp cao. Tôi có nguy cơ tiểu đường không?",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Không có dấu hiệu khẩn cấp",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "orchestrator",
+              "label": "Điều phối",
+              "summary": "Ý định: assess_risk (LLM: Người dùng cung cấp thông tin cá nhân (tuổi, giới tính, cân nặng, chiều cao, bệnh nền huyết áp cao) và hỏi về nguy cơ tiểu đường của chính mình)",
+              "tools": [],
+              "ms": 3485,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 157
+              },
+              "fallback": null,
+              "request_id": "req_fe7925d1b5dc",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": []
+            },
+            {
+              "agent": "intake",
+              "label": "Thu thập thông tin",
+              "summary": "Ghi nhận 4 trường; còn thiếu HighChol, PhysActivity, GenHlth",
+              "tools": [
+                {
+                  "name": "compute_bmi",
+                  "args": {
+                    "height_m": 1.65,
+                    "weight_kg": 80.0
+                  },
+                  "result": {
+                    "bmi": 29.4
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 23
+                  }
+                },
+                {
+                  "name": "validate_profile",
+                  "args": {
+                    "profile": {
+                      "Age": 7,
+                      "Sex": 1,
+                      "BMI": 29.4,
+                      "HighBP": 1
+                    }
+                  },
+                  "result": {
+                    "profile": {
+                      "Age": 7.0,
+                      "Sex": 1.0,
+                      "BMI": 29.4,
+                      "HighBP": 1.0
+                    },
+                    "rejected": []
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 28
+                  }
+                }
+              ],
+              "ms": 1514,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 318
+              },
+              "fallback": null,
+              "request_id": "req_fe7925d1b5dc",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": []
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 0 phần do LLM viết",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "req_fe7925d1b5dc",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 4 bước, 0 dự phòng, 4999 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": "req_fe7925d1b5dc"
+                  },
+                  "result": {
+                    "steps": 4
+                  }
+                }
+              ],
+              "ms": 1,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "req_fe7925d1b5dc",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "question",
+              "title": "Cần thêm thông tin",
+              "text": "Để ước lượng nguy cơ, tôi cần thêm vài thông tin:\n- Anh/chị đã từng được nói là có cholesterol (mỡ máu) cao chưa?\n- Trong 30 ngày qua, anh/chị có tập thể dục hoặc vận động thể chất ngoài công việc hằng ngày không?\n- Anh/chị tự đánh giá sức khỏe chung của mình thế nào: xuất sắc, rất tốt, tốt, trung bình hay kém?"
+            }
+          ]
+        },
+        {
+          "message": "Mỡ máu bình thường, tôi ít vận động, sức khỏe chung trung bình",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Không có dấu hiệu khẩn cấp",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "orchestrator",
+              "label": "Điều phối",
+              "summary": "Ý định: assess_risk (LLM: Người dùng đang trả lời câu hỏi thu thập thông tin về nguy cơ đái tháo đường cá nhân, có đầy đủ các yếu tố sức khỏe (tuổi, cân nặng, chiều cao, huyết áp, cholesterol, vận động, đánh giá sức khỏe).)",
+              "tools": [],
+              "ms": 2706,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 157
+              },
+              "fallback": null,
+              "request_id": "req_3b64823bfa3c",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": []
+            },
+            {
+              "agent": "intake",
+              "label": "Thu thập thông tin",
+              "summary": "Hồ sơ đủ 7 trường bắt buộc (7 trường đã có)",
+              "tools": [
+                {
+                  "name": "validate_profile",
+                  "args": {
+                    "profile": {
+                      "GenHlth": 4,
+                      "HighChol": 0,
+                      "PhysActivity": 0
+                    }
+                  },
+                  "result": {
+                    "profile": {
+                      "GenHlth": 4.0,
+                      "HighChol": 0.0,
+                      "PhysActivity": 0.0
+                    },
+                    "rejected": []
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 28
+                  }
+                }
+              ],
+              "ms": 1567,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 318
+              },
+              "fallback": null,
+              "request_id": "req_3b64823bfa3c",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": []
+            },
+            {
+              "agent": "risk",
+              "label": "Dự đoán nguy cơ",
+              "summary": "predict_diabetes_risk → Báo cáo mắc đái tháo đường (cnn1d)",
+              "tools": [
+                {
+                  "name": "predict_diabetes_risk",
+                  "args": {
+                    "features": {
+                      "Age": 7.0,
+                      "Sex": 1.0,
+                      "BMI": 29.4,
+                      "HighBP": 1.0,
+                      "GenHlth": 4.0,
+                      "HighChol": 0.0,
+                      "PhysActivity": 0.0
+                    }
+                  },
+                  "result": {
+                    "task": "status3",
+                    "label": 2,
+                    "label_name": "Báo cáo mắc đái tháo đường",
+                    "probs": {
+                      "0": 0.1663,
+                      "1": 0.2649,
+                      "2": 0.5688
+                    },
+                    "probs_population": {
+                      "0": 0.6221,
+                      "1": 0.0262,
+                      "2": 0.3517
+                    },
+                    "topic": "diabetes_general",
+                    "model": "cnn1d",
+                    "model_version": "status3-cnn1d-27d9a347",
+                    "defaulted": [
+                      "CholCheck",
+                      "Smoker",
+                      "Stroke",
+                      "HeartDiseaseorAttack",
+                      "HvyAlcoholConsump",
+                      "AnyHealthcare",
+                      "NoDocbcCost",
+                      "MentHlth",
+                      "PhysHlth",
+                      "DiffWalk",
+                      "Education",
+                      "Income"
+                    ]
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 101
+                  }
+                }
+              ],
+              "ms": 12,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 376
+              },
+              "fallback": null,
+              "request_id": "req_3b64823bfa3c",
+              "status": "ok",
+              "version": "status3-cnn1d-27d9a347",
+              "evidence": []
+            },
+            {
+              "agent": "rules",
+              "label": "Luật sàng lọc",
+              "summary": "5/6 luật kích hoạt; cờ: R06:screen",
+              "tools": [
+                {
+                  "name": "evaluate_rules",
+                  "args": {
+                    "profile": {
+                      "Age": 7.0,
+                      "Sex": 1.0,
+                      "BMI": 29.4,
+                      "HighBP": 1.0,
+                      "GenHlth": 4.0,
+                      "HighChol": 0.0,
+                      "PhysActivity": 0.0
+                    },
+                    "labs": {}
+                  },
+                  "result": {
+                    "fired": [
+                      "R01",
+                      "R02",
+                      "R04",
+                      "R05",
+                      "R06"
+                    ],
+                    "flags": [
+                      "R06:screen"
+                    ]
+                  }
+                }
+              ],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 439
+              },
+              "fallback": null,
+              "request_id": "req_3b64823bfa3c",
+              "status": "ok",
+              "version": "ada-soc-2025-s2.v1",
+              "evidence": [
+                "R01",
+                "R02",
+                "R04",
+                "R05",
+                "R06"
+              ]
+            },
+            {
+              "agent": "advisor",
+              "label": "Tư vấn",
+              "summary": "Lời khuyên với 4 trích dẫn",
+              "tools": [
+                {
+                  "name": "get_recommendations",
+                  "args": {
+                    "query": "giảm cân khi thừa cân béo phì để phòng đái tháo đường; kiểm soát huyết áp cao ở người có nguy cơ đái tháo đường; hoạt động thể lực tập thể dục phòng ngừa đái tháo đường; khi nào cần xét nghiệm đường huyết HbA1c để chẩn đoán",
+                    "topic": "diabetes_general"
+                  },
+                  "result": {
+                    "hits": [
+                      "tamanh-tien-dtd#006",
+                      "tamanh-tien-dtd#005",
+                      "tamanh-dtd-thai-ky#006",
+                      "byt-dtd-type2-pdf#033",
+                      "tamanh-dtd-thai-ky#004",
+                      "b108-an-uong#003",
+                      "byt-dtd-type1-pdf#042",
+                      "b108-an-uong#001"
+                    ],
+                    "top_score": 0.8897
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 116
+                  }
+                }
+              ],
+              "ms": 9506,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 520
+              },
+              "fallback": null,
+              "request_id": "req_3b64823bfa3c",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": [
+                "tamanh-tien-dtd#006",
+                "tamanh-tien-dtd#005",
+                "tamanh-dtd-thai-ky#006",
+                "byt-dtd-type2-pdf#033",
+                "tamanh-dtd-thai-ky#004",
+                "b108-an-uong#003",
+                "byt-dtd-type1-pdf#042",
+                "b108-an-uong#001"
+              ]
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 1 phần do LLM viết",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "req_3b64823bfa3c",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 7 bước, 0 dự phòng, 13791 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": "req_3b64823bfa3c"
+                  },
+                  "result": {
+                    "steps": 7
+                  }
+                }
+              ],
+              "ms": 1,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "req_3b64823bfa3c",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "risk",
+              "title": "Ước lượng nguy cơ",
+              "text": "Trong dữ liệu khảo sát BRFSS, mô hình **CNN1D** ước lượng tỷ lệ ở những người có hồ sơ tương tự:\n- không báo cáo mắc bệnh: **62%**\n- đã được thông báo tiền đái tháo đường: **3%**\n- đã được thông báo mắc đái tháo đường: **35%**\nỞ chế độ sàng lọc (ưu tiên không bỏ sót nhóm ít gặp), mô hình xếp hồ sơ vào nhóm: **báo cáo mắc đái tháo đường**.\nĐây là ước lượng thống kê từ câu trả lời tự báo cáo, **không phải chẩn đoán**. Chỉ xét nghiệm đường huyết lúc đói, HbA1c hoặc nghiệm pháp dung nạp glucose mới xác định được tình trạng.\n(12 thông tin chưa hỏi được điền bằng giá trị trung vị của dữ liệu huấn luyện.)"
+            },
+            {
+              "kind": "rules",
+              "title": "Đối chiếu luật sàng lọc",
+              "text": "Đối chiếu hồ sơ với các luật sàng lọc tường minh (độc lập với mô hình học sâu):\n- **R01** Thừa cân theo ngưỡng người châu Á (BMI ≥ 23) (BMI = 29.4)\n- **R02** Tăng huyết áp (HighBP = 1)\n- **R04** Ít vận động thể lực (PhysActivity = 0)\n- **R05** Từ 35 tuổi trở lên (nhóm tuổi BRFSS = 7)\n- **R06** Nên xét nghiệm sàng lọc (HbA1c hoặc đường huyết đói) (≥ 35 tuổi; BMI ≥ 23 kèm tăng huyết áp, ít vận động)\nNguồn ngưỡng: ADA Standards of Care in Diabetes 2025, mục 2. Bộ luật ada-soc-2025-s2.v1."
+            },
+            {
+              "kind": "advice",
+              "title": "Lời khuyên",
+              "text": "Dựa trên hồ sơ và kết quả ước lượng, bạn có nhiều yếu tố nguy cơ mắc đái tháo đường như thừa cân, huyết áp cao, ít vận động và đã đủ tuổi. [[cite:S1]][[cite:S2]][[cite:S6]]\n\n- Bạn cần **đi xét nghiệm sàng lọc đái tháo đường** (HbA1c hoặc đường huyết đói) để kiểm tra sức khỏe, vì luật kích hoạt R06 đã chỉ ra điều này [[cite:S1]][[cite:S2]][[cite:S6]].\n- **Giảm cân 5-10%** cơ thể bằng chế độ ăn lành mạnh như Địa Trung Hải hoặc DASH, giúp giảm nguy cơ tiến triển thành đái tháo đường [[cite:S2]].\n- **Thực hành vận động nhẹ nhàng 30 phút mỗi ngày**, ví dụ đi bộ, để cải thiện hiệu quả chuyển hóa và giảm stress [[cite:S1]][[cite:S5]].\n- **Thay đổi chế độ ăn**: ưu tiên rau lá, ngũ cốc nguyên hạt, trái cây có chỉ số đường huyết thấp, hạn chế đồ uống có cồn, nước ngọt có ga và thực phẩm nhanh [[cite:S1]][[cite:S2]][[cite:S6]].\n- **Giảm lượng chất béo bão hòa và cholesterol**, dùng dầu thực vật như dầu oliu, hạt, và hạn chế thịt bò, bơ, xúc xích [[cite:S6]].\n- Bạn nên **đi khám bác sĩ khoa Nội tiết – Đái tháo đường** để được theo dõi sức khỏe và hỗ trợ điều chỉnh lối sống [[cite:S1]]."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "khan-cap",
+      "label": "Tình huống khẩn cấp",
+      "turns": [
+        {
+          "message": "Mẹ tôi tiêm insulin xong thì lú lẫn, vã mồ hôi, gọi không trả lời",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Phát hiện dấu hiệu khẩn cấp, dừng luồng tư vấn",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 0 phần do LLM viết; cờ: emergency",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 2 bước, 0 dự phòng, 0 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": ""
+                  },
+                  "result": {
+                    "steps": 2
+                  }
+                }
+              ],
+              "ms": 1,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "emergency",
+              "title": "Cần đi khám ngay",
+              "text": "Những dấu hiệu anh/chị mô tả có thể là tình huống cấp cứu (ví dụ hạ đường huyết nặng hoặc nhiễm toan ceton). Hãy gọi **115** hoặc đến cơ sở y tế gần nhất ngay. Nếu đang dùng insulin hoặc thuốc hạ đường huyết và còn tỉnh, người bên cạnh nên đưa người bệnh đi khám ngay, không chờ hỏi đáp thêm."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chao-hoi",
+      "label": "Chào hỏi",
+      "turns": [
+        {
+          "message": "Xin chào, bạn làm được gì?",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Không có dấu hiệu khẩn cấp",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "orchestrator",
+              "label": "Điều phối",
+              "summary": "Ý định: greeting (LLM: Người dùng đang chào hỏi và hỏi về khả năng hỗ trợ của hệ thống)",
+              "tools": [],
+              "ms": 1398,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 157
+              },
+              "fallback": null,
+              "request_id": "req_9c4bfb99e1ff",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": []
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 0 phần do LLM viết",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "req_9c4bfb99e1ff",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 3 bước, 0 dự phòng, 1398 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": "req_9c4bfb99e1ff"
+                  },
+                  "result": {
+                    "steps": 3
+                  }
+                }
+              ],
+              "ms": 1,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "req_9c4bfb99e1ff",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "notice",
+              "title": "Giới thiệu",
+              "text": "Xin chào, tôi là Diabeque, trợ lý sàng lọc và tư vấn đái tháo đường. Tôi có thể:\n- trả lời câu hỏi kiến thức về đái tháo đường, có trích dẫn nguồn y tế;\n- hỏi anh/chị vài thông tin sức khỏe để **ước lượng nguy cơ** (không phải chẩn đoán) và đưa lời khuyên có căn cứ.\nVí dụ: \"Tôi 52 tuổi, cao 1m62, nặng 75kg, huyết áp cao, tôi có nguy cơ tiểu đường không?\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lieu-insulin",
+      "label": "Hỏi liều insulin (bị chặn)",
+      "turns": [
+        {
+          "message": "Tôi nên tiêm bao nhiêu đơn vị insulin mỗi ngày?",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Không có dấu hiệu khẩn cấp",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "orchestrator",
+              "label": "Điều phối",
+              "summary": "Ý định: knowledge (LLM: Câu hỏi về liều insulin là câu hỏi chung về thuốc, không có thông tin sức khỏe cá nhân để đánh giá nguy cơ.)",
+              "tools": [],
+              "ms": 1482,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 157
+              },
+              "fallback": null,
+              "request_id": "req_f5bc986a0d64",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": []
+            },
+            {
+              "agent": "knowledge",
+              "label": "Tra cứu tri thức",
+              "summary": "RAG: answered, 5 trích dẫn",
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "args": {
+                    "question": "Tôi nên tiêm bao nhiêu đơn vị insulin mỗi ngày?",
+                    "topic": null
+                  },
+                  "result": {
+                    "state": "answered",
+                    "top_score": 0.8677,
+                    "used": [
+                      "S5",
+                      "S2",
+                      "S3",
+                      "S1",
+                      "S4"
+                    ],
+                    "hits": [
+                      "byt-dtd-type1-pdf#035",
+                      "byt-dtd-type1-pdf#038",
+                      "byt-dtd-type2-pdf#117",
+                      "byt-dtd-type1-pdf#015",
+                      "byt-dtd-type1-pdf#014",
+                      "byt-dtd-type2-pdf#029",
+                      "b108-chan-doan-dieu-tri#002"
+                    ]
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 128
+                  }
+                }
+              ],
+              "ms": 9382,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 405
+              },
+              "fallback": null,
+              "request_id": "req_f5bc986a0d64",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": [
+                "byt-dtd-type1-pdf#035",
+                "byt-dtd-type1-pdf#038",
+                "byt-dtd-type2-pdf#117",
+                "byt-dtd-type1-pdf#015",
+                "byt-dtd-type1-pdf#014",
+                "byt-dtd-type2-pdf#029",
+                "b108-chan-doan-dieu-tri#002"
+              ]
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 1 phần do LLM viết; cờ: dosage_removed",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "req_f5bc986a0d64",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 4 bước, 0 dự phòng, 10864 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": "req_f5bc986a0d64"
+                  },
+                  "result": {
+                    "steps": 4
+                  }
+                }
+              ],
+              "ms": 1,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "req_f5bc986a0d64",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "conclusion",
+              "title": "Trả lời",
+              "text": "Số lượng insulin cần tiêm mỗi ngày phụ thuộc vào nhiều yếu tố như độ tuổi, giai đoạn bệnh, và kết quả kiểm soát đường huyết. Cụ thể:\n\n\n- **Phân bố liều insulin**:\n- **Liều insulin nền** chiếm 30-45% tổng liều (ví dụ: glargine, detemir, degludec) [[cite:S2]].\n- **Liều insulin bolus trước bữa ăn** chiếm 55-75% tổng liều, dựa trên lượng carbohydrate và mức độ hoạt động [[cite:S2]].\n\n- **Đối với trẻ dưới 5 tuổi**: Cần giảm 50% liều insulin so với độ tuổi lớn hơn [[cite:S5]].\n\n\nLưu ý: Các liều cần được điều chỉnh theo kết quả glucose huyết và HbA1c, đồng thời cần giáo dục sức khỏe tại gia đình và trường học [[cite:S1]][[cite:S4]]."
+            },
+            {
+              "kind": "notice",
+              "title": "Về liều thuốc",
+              "text": "Diabeque không đưa liều thuốc cụ thể. Liều insulin và thuốc hạ đường huyết do bác sĩ điều trị chỉ định theo đường huyết, cân nặng và phác đồ của từng người; anh/chị hãy hỏi bác sĩ trước khi thay đổi liều."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "llm-sap",
+      "label": "Mất kết nối LLM: luật dự phòng",
+      "turns": [
+        {
+          "message": "Tôi 52 tuổi, nam, cao 1m65, nặng 80kg, bị huyết áp cao. Tôi có nguy cơ tiểu đường không?",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Không có dấu hiệu khẩn cấp",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "orchestrator",
+              "label": "Điều phối",
+              "summary": "Ý định: assess_risk (luật dự phòng (LLMUnavailable))",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 157
+              },
+              "fallback": "rules",
+              "request_id": "req_1962071a3555",
+              "status": "fallback",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "intake",
+              "label": "Thu thập thông tin",
+              "summary": "Ghi nhận 4 trường; còn thiếu HighChol, PhysActivity, GenHlth; trích xuất lỗi (LLMUnavailable)",
+              "tools": [
+                {
+                  "name": "compute_bmi",
+                  "args": {
+                    "height_m": 1.65,
+                    "weight_kg": 80.0
+                  },
+                  "result": {
+                    "bmi": 29.4
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 23
+                  }
+                },
+                {
+                  "name": "validate_profile",
+                  "args": {
+                    "profile": {
+                      "Age": 7,
+                      "Sex": 1,
+                      "BMI": 29.4,
+                      "HighBP": 1
+                    }
+                  },
+                  "result": {
+                    "profile": {
+                      "Age": 7.0,
+                      "Sex": 1.0,
+                      "BMI": 29.4,
+                      "HighBP": 1.0
+                    },
+                    "rejected": []
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 28
+                  }
+                }
+              ],
+              "ms": 2,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 318
+              },
+              "fallback": "rules",
+              "request_id": "req_1962071a3555",
+              "status": "fallback",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 0 phần do LLM viết",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "req_1962071a3555",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 4 bước, 2 dự phòng, 2 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": "req_1962071a3555"
+                  },
+                  "result": {
+                    "steps": 4
+                  }
+                }
+              ],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "req_1962071a3555",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "question",
+              "title": "Cần thêm thông tin",
+              "text": "Để ước lượng nguy cơ, tôi cần thêm vài thông tin:\n- Anh/chị đã từng được nói là có cholesterol (mỡ máu) cao chưa?\n- Trong 30 ngày qua, anh/chị có tập thể dục hoặc vận động thể chất ngoài công việc hằng ngày không?\n- Anh/chị tự đánh giá sức khỏe chung của mình thế nào: xuất sắc, rất tốt, tốt, trung bình hay kém?"
+            }
+          ]
+        },
+        {
+          "message": "HbA1c bao nhiêu thì được chẩn đoán đái tháo đường?",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Không có dấu hiệu khẩn cấp",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "orchestrator",
+              "label": "Điều phối",
+              "summary": "Ý định: knowledge (luật dự phòng (LLMUnavailable))",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 157
+              },
+              "fallback": "rules",
+              "request_id": "req_9975b97f250b",
+              "status": "fallback",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "knowledge",
+              "label": "Tra cứu tri thức",
+              "summary": "Dự phòng: 5 đoạn tài liệu, không dùng LLM",
+              "tools": [
+                {
+                  "name": "search_passages",
+                  "args": {
+                    "question": "HbA1c bao nhiêu thì được chẩn đoán đái tháo đường?",
+                    "topic": null
+                  },
+                  "result": {
+                    "top_score": 0.8954,
+                    "hits": [
+                      "tamanh-tien-dtd#004",
+                      "byt-dtd-type2-pdf#019",
+                      "byt-dtd-type2-pdf#022",
+                      "byt-dtd-type1-pdf#042",
+                      "byt-tien-dtd-pdf#000"
+                    ]
+                  },
+                  "code": {
+                    "path": "chap6-agents/backend/app/agents/tools.py",
+                    "line": 141
+                  }
+                }
+              ],
+              "ms": 212,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 405
+              },
+              "fallback": "passages",
+              "request_id": "req_9975b97f250b",
+              "status": "fallback",
+              "version": "diabeque-agents.v2",
+              "evidence": [
+                "tamanh-tien-dtd#004",
+                "byt-dtd-type2-pdf#019",
+                "byt-dtd-type2-pdf#022",
+                "byt-dtd-type1-pdf#042",
+                "byt-tien-dtd-pdf#000"
+              ]
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 1 phần do LLM viết",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "req_9975b97f250b",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 4 bước, 2 dự phòng, 212 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": "req_9975b97f250b"
+                  },
+                  "result": {
+                    "steps": 4
+                  }
+                }
+              ],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "req_9975b97f250b",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "conclusion",
+              "title": "Đoạn tài liệu liên quan",
+              "text": "Không tạo được câu trả lời lúc này; dưới đây là các đoạn tài liệu liên quan.\n- HbA1C cũng được dùng để chẩn đoán tiền tiểu đường. Nếu HbA1C dưới 5.6% thì bình thường. - Nếu HbA1C từ 5.7 đến 6.4% thì tiền tiểu đường. - Nếu HbA1C từ 6.5% trở lên đã bị đái tháo đường. Bác sĩ có thể chỉ định bạn kiểm tra đường huyết một lần nữa để khẳng định. Trẻ em cũng có [[cite:S1]]\n- Khi glucose huyết đã tương đối ổn định, có thể đo glucose huyết với tần xuất thưa hơn. HbA1c thường được khuyến cáo đo 3 tháng một lần để theo dõi sát tình trạng kiểm soát glucose huyết. Bảng 3: Tương quan giữa HbA1c và nồng độ glucose huyết trung bình HbA1c (%) HbA1c (mmol/mol) [[cite:S2]]\n- - Mục tiêu có thể thấp hơn (HbA1c <6,5%) ở BN trẻ, mới chẩn đoán, không có các bệnh lý tim mạch, nguy cơ hạ glucose máu thấp. - Ngược lại, mục tiêu có thể cao hơn (HbA1c từ 7,5 – 8%) ở những BN lớn tuổi, mắc bệnh đái tháo đường đã lâu, có nhiều bệnh lý đi kèm, có tiền sử hạ [[cite:S3]]\n- 4.1.2. Các yếu tố ảnh hưởng đến tiêm insulin - Nồng độ, thể tích và liều insulin thấp hơn → hấp thu nhanh hơn. - Vị trí tiêm: insulin tác dụng ngắn (insulin thông thường) hấp thu nhanh hơn khi tiêm ở bụng, chậm hơn khi tiêm ở cánh tay, sau là đùi và mông. Không có sự khác biệt [[cite:S4]]\n- CN. Đỗ Thị Thư, Cục Quản lý Khám, chữa bệnh. Khoảng 5-10% người tiền ĐTĐ sẽ trở thành ĐTĐ hàng năm và tổng cộng 70% người tiền ĐTĐ sẽ thành ĐTĐ thực sự. Tiền ĐTĐ liên quan với các yếu tố nguy cơ giống như bệnh ĐTĐ: thừa cân, béo phì, rối loạn lipid máu, tăng huyết áp, ít hoạt [[cite:S5]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ngoai-pham-vi",
+      "label": "Câu hỏi ngoài phạm vi",
+      "turns": [
+        {
+          "message": "Giá vàng hôm nay bao nhiêu?",
+          "steps": [
+            {
+              "agent": "safety_in",
+              "label": "An toàn (vào)",
+              "summary": "Không có dấu hiệu khẩn cấp",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 98
+              },
+              "fallback": null,
+              "request_id": "",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "orchestrator",
+              "label": "Điều phối",
+              "summary": "Ý định: out_of_scope (LLM: Câu hỏi về giá vàng không liên quan đến đái tháo đường, chẩn đoán, điều trị hoặc tư vấn sức khỏe.)",
+              "tools": [],
+              "ms": 1586,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 157
+              },
+              "fallback": null,
+              "request_id": "req_cb0b291dd6c4",
+              "status": "ok",
+              "version": "poolside/laguna-xs-2.1",
+              "evidence": []
+            },
+            {
+              "agent": "safety_out",
+              "label": "An toàn (ra)",
+              "summary": "Đã kiểm 0 phần do LLM viết",
+              "tools": [],
+              "ms": 0,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 565
+              },
+              "fallback": null,
+              "request_id": "req_cb0b291dd6c4",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            },
+            {
+              "agent": "audit",
+              "label": "Giám sát",
+              "summary": "Nhật ký đã ghi: 3 bước, 0 dự phòng, 1586 ms",
+              "tools": [
+                {
+                  "name": "write_audit",
+                  "args": {
+                    "request_id": "req_cb0b291dd6c4"
+                  },
+                  "result": {
+                    "steps": 3
+                  }
+                }
+              ],
+              "ms": 2,
+              "code": {
+                "path": "chap6-agents/backend/app/agents/nodes.py",
+                "line": 610
+              },
+              "fallback": null,
+              "request_id": "req_cb0b291dd6c4",
+              "status": "ok",
+              "version": "diabeque-agents.v2",
+              "evidence": []
+            }
+          ],
+          "sections": [
+            {
+              "kind": "notice",
+              "title": "Ngoài phạm vi",
+              "text": "Câu hỏi nằm ngoài phạm vi của trợ lý. Tôi chỉ hỗ trợ thông tin và sàng lọc nguy cơ đái tháo đường."
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
