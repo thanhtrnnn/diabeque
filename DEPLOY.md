@@ -93,3 +93,17 @@ API Chương 6 hiệu chỉnh xác suất theo tần suất lớp của BRFSS. K
 | Tra cứu / tư vấn báo lỗi, chào hỏi và khẩn cấp vẫn chạy | không gọi được LLM: kiểm `OPENAI_BASE_URL`, mạng |
 | Câu đầu tiên rất chậm | đang tải hoặc nạp bge-m3; gửi thử mỗi câu demo một lần trước |
 | API báo thiếu `openai_base_url` | chưa có `.env` ở gốc repo |
+
+## Triển khai công khai và tự dựng lại (chatbot.drakefamtax.id.vn)
+
+```bash
+./deploy/deploy.sh up       # build web, ghi 4 LaunchAgent, trỏ DNS, bật api + web + tunnel + watchdog
+./deploy/deploy.sh status   # trạng thái từng tầng và URL công khai
+./deploy/deploy.sh rebuild  # sau khi sửa frontend
+./deploy/deploy.sh down     # gỡ LaunchAgent
+```
+
+Chuỗi phụ thuộc: Neo4j (Docker) → API 8200 → web 3200 → cloudflared tunnel → `https://chatbot.drakefamtax.id.vn`.
+Hai lớp tự phục hồi: `KeepAlive` của launchd dựng lại tiến trình chết trong vài giây; watchdog (`deploy.sh heal`, mỗi 60 giây)
+xử lý các ca KeepAlive không thấy: agent bị gỡ, tiến trình treo (cổng không trả 200), Neo4j/Docker tắt, tunnel mất kết nối ra ngoài.
+Log ở `deploy/logs/` (`heal.log` chỉ ghi khi có hành động). API chỉ nghe 127.0.0.1; ra Internet chỉ có web.

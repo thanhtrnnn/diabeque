@@ -20,3 +20,5 @@ chap6-agents/data/
 *.out
 *.toc
 .superpowers/
+deploy/logs/
+chap6-agents/results/audit.jsonl
