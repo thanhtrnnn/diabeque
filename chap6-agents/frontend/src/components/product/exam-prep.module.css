@@ -832,3 +832,62 @@
   .reviewButton[aria-pressed="true"],
   .question:focus-within { outline: var(--rule-fine) solid Highlight; }
 }
+
+.keyword {
+  padding: 0 var(--space-3xs);
+  border-radius: var(--radius-control);
+  color: var(--color-ink);
+  background: var(--color-warning-soft);
+  font-weight: 700;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.keywordList {
+  width: 100%;
+  max-width: 100ch;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3xs);
+}
+
+.keywordList > span,
+.assignments > span {
+  width: 100%;
+  color: var(--color-muted);
+  font-size: var(--type-label-size);
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.keywordList .keyword { font-size: var(--type-label-size); }
+
+.assignments {
+  width: 100%;
+  max-width: 100ch;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: var(--spacing-surface-default);
+  border-left: var(--space-3xs) solid var(--color-accent);
+  border-radius: var(--radius-control);
+  display: grid;
+  gap: var(--space-2xs);
+  background: var(--color-accent-soft);
+}
+
+.assignments ul {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding-left: var(--space-md);
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+@media (forced-colors: active) {
+  .keyword { background: Mark; color: MarkText; }
+}

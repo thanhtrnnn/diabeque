@@ -25,7 +25,31 @@ function questionSearchText(question: ExamQuestion) {
     question.table?.headers.join(" ") ?? "",
     ...(question.table?.rows.flat() ?? []),
     ...(question.sources ?? []),
+    ...(question.keywords ?? []),
+    ...(question.assignments ?? []),
   ].join(" ").toLocaleLowerCase("vi");
+}
+
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function keywordPattern(keywords: string[] | undefined) {
+  if (!keywords || keywords.length === 0) return null;
+  const sorted = [...keywords].sort((a, b) => b.length - a.length).map(escapeRegExp);
+  return new RegExp("(" + sorted.join("|") + ")", "giu");
+}
+
+function Highlight({ text, pattern }: { text: string; pattern: RegExp | null }) {
+  if (!pattern) return <>{text}</>;
+  const parts = text.split(pattern);
+  return (
+    <>
+      {parts.map((part, index) => (index % 2 === 1
+        ? <mark className={styles.keyword} key={index}>{part}</mark>
+        : <span key={index}>{part}</span>))}
+    </>
+  );
 }
 
 function wrapSvgLabel(label: string, limit = 16) {
@@ -157,6 +181,9 @@ export function ExamPrep() {
     window.setTimeout(() => document.getElementById("question-" + pick.id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
+  const patterns = useMemo(() => new Map(EXAM_QUESTIONS.map((question) => [question.id, keywordPattern(question.keywords)])), []);
+  const pattern = (question: ExamQuestion) => patterns.get(question.id) ?? null;
+
   const reviewedCount = reviewedIds.size;
   const progress = Math.round((reviewedCount / EXAM_QUESTIONS.length) * 100);
 
@@ -168,7 +195,7 @@ export function ExamPrep() {
           <div>
             <p className={styles.eyebrow}>SỔ TAY VẤN ĐÁP · INTELLIGENT SYSTEM DEVELOPMENT</p>
             <h2>Ôn theo chủ đề, luyện trả lời theo ý</h2>
-            <p>Đáp án ngắn gọn bằng tiếng Việt, kèm công thức, sơ đồ và ví dụ từ code Diabeque để bạn có thể giải thích bằng lời của mình.</p>
+            <p>Đáp án ngắn gọn bằng tiếng Việt, kèm công thức, sơ đồ, từ khóa tô sáng và số liệu từ các assignment để bạn giải thích bằng lời của mình.</p>
           </div>
         </div>
         <div className={styles.fact}>
@@ -180,7 +207,7 @@ export function ExamPrep() {
 
       <section className={styles.projectCallout} aria-label="Lưu ý về phần đồ án">
         <strong>Phân biệt thiết kế và phần đã làm</strong>
-        <p>Architecture PDF mô tả hệ hybrid mở rộng (Rule, Monitoring và RL là các vai trò riêng). Code hiện tại có 7 node LangGraph; trang này ghi rõ khi một ý thuộc đề xuất để tránh trình bày nhầm là tính năng đã triển khai.</p>
+        <p>Architecture PDF mô tả hệ hybrid mở rộng (Rule, Monitoring và RL là các vai trò riêng). Code hiện tại có 9 node LangGraph (đã có Rule và Audit/Monitoring; chỉ RL chưa cài). Từ khóa cần nói được tô vàng; khung “Liên hệ bài tập” nối mỗi câu với số liệu thật từ A1–A8 và Agent02.</p>
         <a href="/app/kien-truc">Mở sơ đồ kiến trúc hiện tại <span aria-hidden="true">↗</span></a>
       </section>
 
@@ -283,9 +310,15 @@ export function ExamPrep() {
                     </div>
                     <div className={styles.answer} id={"answer-" + question.id} hidden={!openIds.has(question.id)}>
                         <div className={styles.answerLabel}><span />GỢI Ý TRẢ LỜI</div>
-                        {question.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                        {question.keywords && (
+                          <div className={styles.keywordList} aria-label="Từ khóa cần nói">
+                            <span>Từ khóa</span>
+                            {question.keywords.map((keyword) => <mark className={styles.keyword} key={keyword}>{keyword}</mark>)}
+                          </div>
+                        )}
+                        {question.paragraphs.map((paragraph, index) => <p key={index}><Highlight text={paragraph} pattern={pattern(question)} /></p>)}
                         {question.formula && <div className={styles.formula}><span>Công thức / ký hiệu</span><code>{question.formula}</code></div>}
-                        {question.points && <ul className={styles.points}>{question.points.map((point) => <li key={point}>{point}</li>)}</ul>}
+                        {question.points && <ul className={styles.points}>{question.points.map((point) => <li key={point}><Highlight text={point} pattern={pattern(question)} /></li>)}</ul>}
                         {question.diagram && <QuestionDiagram id={question.id} nodes={question.diagram.nodes} caption={question.diagram.caption} />}
                         {question.table && (
                           <div className={styles.tableWrap}>
@@ -293,13 +326,19 @@ export function ExamPrep() {
                             <table>
                               <thead><tr>{question.table.headers.map((header) => <th scope="col" key={header}>{header}</th>)}</tr></thead>
                               <tbody>{question.table.rows.map((row, rowIndex) => (
-                                <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>
+                                <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}><Highlight text={cell} pattern={pattern(question)} /></td>)}</tr>
                               ))}</tbody>
                             </table>
                           </div>
                         )}
                         {question.code && <pre className={styles.code}><code>{question.code}</code></pre>}
-                        {question.projectNote && <p className={styles.projectNote}><strong>Ghi chú khi bảo vệ:</strong> {question.projectNote}</p>}
+                        {question.assignments && (
+                          <div className={styles.assignments}>
+                            <span>Liên hệ bài tập đã làm</span>
+                            <ul>{question.assignments.map((line) => <li key={line}><Highlight text={line} pattern={pattern(question)} /></li>)}</ul>
+                          </div>
+                        )}
+                        {question.projectNote && <p className={styles.projectNote}><strong>Ghi chú khi bảo vệ:</strong> <Highlight text={question.projectNote} pattern={pattern(question)} /></p>}
                         {question.sources && (
                           <div className={styles.sources}>
                             <span>Đối chiếu dự án</span>
