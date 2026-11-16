@@ -1,4 +1,6 @@
-"""LangGraph wiring: supervisor pattern with a safety check on the way in and on the way out."""
+"""LangGraph wiring: supervisor pattern with a safety check on the way in and on the way out.
+
+Assessment path: intake -> risk (DL) -> rules (explicit rules) -> advisor (explanation); every turn ends in audit."""
 
 from functools import lru_cache
 
@@ -28,17 +30,21 @@ def build(checkpointer=None):
     g.add_node(Agent.INTAKE, nodes.intake)
     g.add_node(Agent.RISK, nodes.risk)
     g.add_node(Agent.KNOWLEDGE, nodes.knowledge)
+    g.add_node(Agent.RULES, nodes.rules_check)
     g.add_node(Agent.ADVISOR, nodes.advisor)
     g.add_node(Agent.SAFETY_OUT, nodes.safety_out)
+    g.add_node(Agent.AUDIT, nodes.audit)
 
     g.add_edge(START, Agent.SAFETY_IN)
     g.add_conditional_edges(Agent.SAFETY_IN, after_safety_in, [Agent.ORCHESTRATOR, Agent.SAFETY_OUT])
     g.add_conditional_edges(Agent.ORCHESTRATOR, after_orchestrator, [Agent.KNOWLEDGE, Agent.INTAKE, Agent.SAFETY_OUT])
     g.add_conditional_edges(Agent.INTAKE, after_intake, [Agent.RISK, Agent.SAFETY_OUT])
-    g.add_edge(Agent.RISK, Agent.ADVISOR)
+    g.add_edge(Agent.RISK, Agent.RULES)
+    g.add_edge(Agent.RULES, Agent.ADVISOR)
     g.add_edge(Agent.ADVISOR, Agent.SAFETY_OUT)
     g.add_edge(Agent.KNOWLEDGE, Agent.SAFETY_OUT)
-    g.add_edge(Agent.SAFETY_OUT, END)
+    g.add_edge(Agent.SAFETY_OUT, Agent.AUDIT)
+    g.add_edge(Agent.AUDIT, END)
     return g.compile(checkpointer=checkpointer)
 
 

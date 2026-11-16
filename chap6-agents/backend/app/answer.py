@@ -28,7 +28,7 @@ Trả lời ngắn gọn, 3 đến 8 câu, có thể dùng gạch đầu dòng."
 @lru_cache
 def client() -> OpenAI:
     s = settings()
-    return OpenAI(base_url=s.llm_base_url, api_key=s.openai_api_key, timeout=60)
+    return OpenAI(base_url=s.llm_base_url, api_key=s.openai_api_key, timeout=s.llm_timeout, max_retries=0)
 
 
 def alias(i: int) -> str:

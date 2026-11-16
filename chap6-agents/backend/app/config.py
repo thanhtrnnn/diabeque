@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     neo4j_user: str = "neo4j"
     neo4j_password: str
     embedding_model: str = "BAAI/bge-m3"
+    llm_timeout: float = 120.0  # seconds per LLM call; the NVIDIA-hosted gemma-4-31b takes 30–55 s
     allow_simulation: bool = False  # ALLOW_SIMULATION=1 lets a request simulate an outage (demo only)
 
     @property

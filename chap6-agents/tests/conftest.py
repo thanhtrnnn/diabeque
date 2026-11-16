@@ -5,6 +5,12 @@ import pytest
 from backend.app.agents import graph, nodes, tools
 
 
+@pytest.fixture(autouse=True)
+def audit_to_tmp(monkeypatch, tmp_path):
+    """No test run writes into results/audit.jsonl."""
+    monkeypatch.setattr(nodes, "AUDIT_LOG", tmp_path / "audit.jsonl")
+
+
 @pytest.fixture
 def offline(monkeypatch):
     def no_llm(schema):

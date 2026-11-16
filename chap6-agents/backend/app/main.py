@@ -21,7 +21,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import answer as gen
-from .agents import fields
+from .agents import fields, nodes
 from .agents.graph import app as agent_graph
 from .agents.state import AGENT_LABELS, TURN_DEFAULTS, Agent
 from .config import ROOT, settings
@@ -95,14 +95,15 @@ def answer_state(sections: list[dict]) -> str:
     return "insufficient_evidence"
 
 
-def run_chat(req: ChatRequest, conversation_id: str) -> Iterator[tuple[str, dict]]:
+def run_chat(req: ChatRequest, conversation_id: str, request_id: str = "") -> Iterator[tuple[str, dict]]:
     yield "stream.started", {"capabilities": ["inline_citations", "source_collection", "agent_trace"]}
     started = time.perf_counter()
     graph = agent_graph()
     cfg = {"configurable": {"thread_id": conversation_id}}
     seen = 0
     llm_down = req.simulate == "llm_down" and settings().allow_simulation
-    for update in graph.stream({**TURN_DEFAULTS, "message": req.message, "llm_down": llm_down}, cfg, stream_mode="updates"):
+    for update in graph.stream({**TURN_DEFAULTS, "message": req.message, "llm_down": llm_down,
+                                  "request_id": request_id, "conversation_id": conversation_id}, cfg, stream_mode="updates"):
         for node, delta in update.items():
             trace = (delta or {}).get("trace", [])
             for step in trace[seen:]:
@@ -166,6 +167,9 @@ def run_chat(req: ChatRequest, conversation_id: str) -> Iterator[tuple[str, dict
                 "missing": state.get("missing", []),
                 "risk": state.get("risk"),
                 "safety_flags": state.get("safety_flags", []),
+                "rules": state.get("rules", []),
+                "decision": state.get("decision"),
+                "request_id": state.get("request_id"),
             },
         }
     }
@@ -187,7 +191,7 @@ def sse(req: ChatRequest) -> Iterator[str]:
         return f"id: {seq}\nevent: {name}\ndata: {json.dumps(envelope, ensure_ascii=False, default=str)}\n\n"
 
     try:
-        for name, data in run_chat(req, conversation_id):
+        for name, data in run_chat(req, conversation_id, request_id):
             yield frame(name, data)
     except Exception as exc:
         if node := getattr(exc, "diabeque_node", None):
@@ -218,6 +222,24 @@ def agents() -> dict:
     return {"agents": [{"id": a.value, "label": AGENT_LABELS[a]} for a in Agent],
             "mermaid": agent_graph().get_graph().draw_mermaid(), "repo_root": str(ROOT.parent), "commit": git_commit(),
             "allow_simulation": settings().allow_simulation}
+
+
+@app.get("/api/v1/audit")
+def audit_log(limit: int = 20) -> dict:
+    """Monitoring agent's log: the latest records plus per-agent counts, mean latency and fallback rate."""
+    path = nodes.AUDIT_LOG
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    records = [json.loads(line) for line in lines if line.strip()]
+    stats: dict[str, dict] = {}
+    for rec in records:
+        for st in rec.get("steps", []):
+            a = stats.setdefault(st["agent"], {"runs": 0, "fallbacks": 0, "ms": 0})
+            a["runs"] += 1
+            a["fallbacks"] += st.get("status") == "fallback"
+            a["ms"] += st.get("ms") or 0
+    summary = {k: {"runs": v["runs"], "fallback_rate": round(v["fallbacks"] / v["runs"], 3), "mean_ms": round(v["ms"] / v["runs"])}
+               for k, v in stats.items()}
+    return {"total": len(records), "agents": summary, "records": records[-max(1, min(limit, 200)):]}
 
 
 @app.get("/api/v1/conversations/{conversation_id}/profile")

@@ -21,8 +21,8 @@ def ensure_llm(state: SessionState) -> None:
 @lru_cache
 def chat() -> ChatOpenAI:
     s = settings()
-    return ChatOpenAI(model=s.model_name, base_url=s.llm_base_url, api_key=s.openai_api_key, temperature=0, timeout=60,
-                      max_retries=1)
+    return ChatOpenAI(model=s.model_name, base_url=s.llm_base_url, api_key=s.openai_api_key, temperature=0,
+                      timeout=s.llm_timeout, max_retries=0)
 
 
 class _Structured:

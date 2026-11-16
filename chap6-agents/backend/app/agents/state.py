@@ -16,9 +16,11 @@ class Agent(StrEnum):
     ORCHESTRATOR = "orchestrator"
     INTAKE = "intake"
     RISK = "risk"
+    RULES = "rules"
     KNOWLEDGE = "knowledge"
     ADVISOR = "advisor"
     SAFETY_OUT = "safety_out"
+    AUDIT = "audit"
 
 
 AGENT_LABELS: dict[Agent, str] = {
@@ -26,9 +28,11 @@ AGENT_LABELS: dict[Agent, str] = {
     Agent.ORCHESTRATOR: "Điều phối",
     Agent.INTAKE: "Thu thập thông tin",
     Agent.RISK: "Dự đoán nguy cơ",
+    Agent.RULES: "Luật sàng lọc",
     Agent.KNOWLEDGE: "Tra cứu tri thức",
     Agent.ADVISOR: "Tư vấn",
     Agent.SAFETY_OUT: "An toàn (ra)",
+    Agent.AUDIT: "Giám sát",
 }
 
 
@@ -52,6 +56,11 @@ class Step(TypedDict, total=False):
     ms: int
     code: CodeRef           # where the node function is defined
     fallback: str | None    # "rules" when the LLM path failed and regex rules answered instead
+    # Agent message contract (architecture §6.1: id, agent, status, payload, evidence, version).
+    request_id: str
+    status: str             # ok | fallback
+    version: str            # model / ruleset / code version that produced the step
+    evidence: list[str]     # chunk ids or rule ids the step relied on
 
 
 class Section(TypedDict):
@@ -69,6 +78,11 @@ class SessionState(TypedDict, total=False):
     risk: dict[str, Any] | None
     # Per turn (reset by the API before each run).
     message: str
+    request_id: str
+    conversation_id: str
+    labs: dict[str, float]             # HbA1c / fasting glucose typed by the user (persisted)
+    rules: list[dict[str, Any]]        # rule agent results of this turn
+    decision: dict[str, Any] | None    # coordinator aggregate: prediction, rules and evidence kept apart
     llm_down: bool                     # simulated outage: LLM-backed agents must use their rules
     history: list[dict[str, str]]
     intent: str
@@ -81,5 +95,5 @@ class SessionState(TypedDict, total=False):
 
 
 TURN_DEFAULTS: dict[str, Any] = {
-    "intent": "", "llm_down": False, "emergency": False, "missing": [], "sources": [], "sections": [], "safety_flags": [], "trace": [],
+    "intent": "", "request_id": "", "conversation_id": "", "rules": [], "decision": None, "llm_down": False, "emergency": False, "missing": [], "sources": [], "sections": [], "safety_flags": [], "trace": [],
 }

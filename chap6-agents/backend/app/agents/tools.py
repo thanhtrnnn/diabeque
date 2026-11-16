@@ -1,5 +1,6 @@
 """Tools the agents call. Plain functions, also wrapped as LangChain tools for the single-agent baseline."""
 
+import hashlib
 import json
 import math
 import sqlite3
@@ -71,6 +72,16 @@ def prior_corrected(task: Task, probs: dict[str, float]) -> dict[str, float] | N
     return {k: round(v / total, 4) for k, v in raw.items()}
 
 
+@lru_cache
+def model_version(task: Task) -> str:
+    """`<task>-<arch>-<sha256[:8] of model.pt>`: changes whenever the weights are retrained."""
+    folder = MODELS_DIR / task.value
+    arch = json.loads((folder / "preprocess.json").read_text()).get("arch", "mlp")
+    weights = folder / "model.pt"
+    digest = hashlib.sha256(weights.read_bytes()).hexdigest()[:8] if weights.exists() else "missing"
+    return f"{task.value}-{arch}-{digest}"
+
+
 def _predict(task: Task, features: dict[str, float]) -> dict:
     out = predict(task, {k: v for k, v in features.items() if k in FEATURE_NAMES})
     probs = {str(k): round(v, 4) for k, v in out["probs"].items()}
@@ -82,6 +93,7 @@ def _predict(task: Task, features: dict[str, float]) -> dict:
         "probs_population": prior_corrected(task, probs),    # class frequencies restored: what to show users
         "topic": str(out["topic"]),
         "model": out["model"],
+        "model_version": model_version(task),
         "defaulted": [n for n in FEATURE_NAMES if n not in features],
     }
 

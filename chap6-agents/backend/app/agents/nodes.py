@@ -1,14 +1,18 @@
-"""The six agents. Each node reads the shared state, does one job, and returns the keys it changed plus a trace step."""
+"""The agents. Each node reads the shared state, does one job, and returns the keys it changed plus a trace step."""
 
+import json
 import re
 import time
+import uuid
+from datetime import UTC, datetime
 from collections.abc import Callable
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 from .. import answer as gen
-from . import fields, safety, tools
+from ..config import ROOT, settings
+from . import fields, rules, safety, tools
 from .coderef import code_ref
 from .llm import LLMUnavailable, ensure_llm, structured
 from .state import AGENT_LABELS, Agent, Intent, SessionState, Step, ToolCall
@@ -31,15 +35,41 @@ def traced(agent: Agent) -> Callable:
             except Exception as exc:
                 exc.diabeque_node = agent.value  # lets the API say which agent failed
                 raise
+            fallback = rest[0] if rest else None
             step: Step = {"agent": agent.value, "label": AGENT_LABELS[agent], "summary": summary, "tools": calls,
-                          "ms": round((time.perf_counter() - t0) * 1000), "code": code,
-                          "fallback": rest[0] if rest else None}
+                          "ms": round((time.perf_counter() - t0) * 1000), "code": code, "fallback": fallback,
+                          "request_id": update.get("request_id") or state.get("request_id", ""),
+                          "status": "fallback" if fallback else "ok",
+                          "version": step_version(agent, state, update, fallback),
+                          "evidence": step_evidence(state, update)}
             return {**update, "trace": [*state.get("trace", []), step]}
 
         node.__name__ = agent.value
         return node
 
     return wrap
+
+
+LLM_AGENTS = {Agent.ORCHESTRATOR, Agent.INTAKE, Agent.KNOWLEDGE, Agent.ADVISOR}
+CODE_VERSION = "diabeque-agents.v2"
+
+
+def step_version(agent: Agent, state: SessionState, update: dict, fallback: str | None) -> str:
+    if agent == Agent.RISK and (r := update.get("risk")):
+        return r.get("model_version", r.get("model", ""))
+    if agent == Agent.RULES:
+        return rules.RULESET_VERSION
+    if agent in LLM_AGENTS and not fallback:
+        return settings().model_name
+    return CODE_VERSION
+
+
+def step_evidence(state: SessionState, update: dict) -> list[str]:
+    """What the step added as support: new source chunks, or fired rule ids."""
+    if "rules" in update:
+        return [r["id"] for r in update["rules"] if r["fired"]]
+    before = len(state.get("sources", []))
+    return [h.get("chunk_id", "") for h in update.get("sources", [])[before:]]
 
 
 def call(name: str, args: dict, result) -> ToolCall:
@@ -134,7 +164,7 @@ def orchestrator(state: SessionState):
         intent, how = decision.intent, f"LLM: {decision.reason}"
     except Exception as e:  # endpoint down or malformed tool call: rules keep the system usable
         intent, how, fallback = fallback_intent(state), f"luật dự phòng ({type(e).__name__})", "rules"
-    update: dict = {"intent": intent}
+    update: dict = {"intent": intent, "request_id": state.get("request_id") or f"req_{uuid.uuid4().hex[:12]}"}
     if intent == Intent.GREETING:
         update["sections"] = [{"kind": "notice", "title": "Giới thiệu", "text": GREETING_TEXT}]
     elif intent == Intent.OUT_OF_SCOPE:
@@ -402,6 +432,43 @@ def knowledge(state: SessionState):
     return {"sources": out["hits"], "sections": sections}, summary, calls, fallback
 
 
+# ------------------------------------------------------------------ rules
+
+
+@traced(Agent.RULES)
+def rules_check(state: SessionState):
+    texts = [h["user"] for h in state.get("history", [])] + [state["message"]]
+    labs = {**state.get("labs", {}), **rules.parse_labs(texts)}
+    results = rules.evaluate(state["profile"], labs, state.get("risk"))
+    flags = rules.review_flags(results)
+    section = {"kind": "rules", "title": "Đối chiếu luật sàng lọc", "text": rules.section_text(results)}
+    fired = [r["id"] for r in results if r["fired"]]
+    summary = f"{len(fired)}/{len(results)} luật kích hoạt" + (f"; cờ: {', '.join(flags)}" if flags else "")
+    calls = [call("evaluate_rules", {"profile": state["profile"], "labs": labs}, {"fired": fired, "flags": flags})]
+    return {"labs": labs, "rules": results, "sections": [*state.get("sections", []), section]}, summary, calls
+
+
+def aggregate(state: SessionState) -> dict:
+    """Coordinator aggregation F(y_DL, y_rule, y_KG): keeps prediction, rule results and evidence apart."""
+    risk = state.get("risk") or {}
+    results = state.get("rules", [])
+    return {
+        "request_id": state.get("request_id", ""),
+        "prediction": {k: risk.get(k) for k in ("task", "label", "label_name", "model", "model_version")} if risk else None,
+        "rules": [r["id"] for r in results if r["fired"]],
+        "flags": rules.review_flags(results),
+        "evidence": [h.get("chunk_id") for h in state.get("sources", [])],
+    }
+
+
+def decision_text(decision: dict, results: list[dict]) -> str:
+    fired = [f"{r['id']} {r['title']}" for r in results if r["fired"]]
+    lines = [f"LUẬT KÍCH HOẠT (độc lập với mô hình): {'; '.join(fired) or 'không có'}"]
+    if decision["flags"]:
+        lines.append(f"CỜ RÀ SOÁT: {', '.join(decision['flags'])}")
+    return "\n".join(lines)
+
+
 # ------------------------------------------------------------------ advisor
 
 ADVISOR_SYSTEM = gen.SYSTEM + """
@@ -458,8 +525,11 @@ def advisor(state: SessionState):
                   {"hits": [h["chunk_id"] for h in rec["hits"]], "top_score": rec["top_score"]})]
     hits = [tools.Hit(**{k: h[k] for k in ("chunk_id", "doc_id", "text", "lang", "title", "publisher", "url")}, facts=h["facts"])
             for h in rec["hits"]]
-    question = (f"HỒ SƠ: {fields.describe_profile(profile)}\nKẾT QUẢ ƯỚC LƯỢNG: {risk['label_name']}\n"
-                "Hãy đưa 3 đến 6 lời khuyên cụ thể cho người này, mỗi ý có trích dẫn.")
+    decision = aggregate(state)
+    question = (f"HỒ SƠ: {fields.describe_profile(profile)}\nKẾT QUẢ ƯỚC LƯỢNG (mô hình): {risk['label_name']}\n"
+                f"{decision_text(decision, state.get('rules', []))}\n"
+                "Hãy đưa 3 đến 6 lời khuyên cụ thể cho người này, mỗi ý có trích dẫn. "
+                "Nếu có luật sàng lọc kích hoạt, ưu tiên khuyên đi xét nghiệm.")
     offset, fallback = len(state.get("sources", [])), None
     try:
         ensure_llm(state)
@@ -481,8 +551,9 @@ def advisor(state: SessionState):
         section = {"kind": "advice", "title": "Lời khuyên",
                    "text": "Chưa tìm được khuyến nghị có nguồn phù hợp. Anh/chị nên trao đổi với bác sĩ để được tư vấn và xét nghiệm."}
         summary = "Dự phòng: không có khuyến nghị trong đồ thị" if fallback else "Không có lời khuyên qua được cổng trích dẫn"
-    return ({"sources": [*state.get("sources", []), *rec["hits"]], "sections": [*state.get("sections", []), section]},
-            summary, calls, fallback)
+    decision["evidence"] = [*decision["evidence"], *(h.get("chunk_id") for h in rec["hits"])]
+    return ({"sources": [*state.get("sources", []), *rec["hits"]], "sections": [*state.get("sections", []), section],
+             "decision": decision}, summary, calls, fallback)
 
 
 # ------------------------------------------------------------------ safety (out)
@@ -509,3 +580,42 @@ def safety_out(state: SessionState):
     history = [*state.get("history", []), {"user": state["message"], "assistant": plain}][-10:]
     summary = f"Đã kiểm {sum(s['kind'] in FILTERED for s in sections)} phần do LLM viết" + (f"; cờ: {', '.join(flags)}" if flags else "")
     return {"sections": sections, "safety_flags": flags, "history": history}, summary, []
+
+
+# ------------------------------------------------------------------ monitoring / audit
+
+AUDIT_LOG = ROOT / "results" / "audit.jsonl"
+
+
+def audit_record(state: SessionState) -> dict:
+    """Execution metadata only: no message text and no profile values, just which fields were known."""
+    trace = state.get("trace", [])
+    return {
+        "ts": datetime.now(UTC).isoformat(timespec="seconds"),
+        "request_id": state.get("request_id", ""),
+        "conversation_id": state.get("conversation_id", ""),
+        "intent": state.get("intent", ""),
+        "message_chars": len(state.get("message", "")),
+        "profile_fields": sorted(state.get("profile", {})),
+        "steps": [{k: st.get(k) for k in ("agent", "status", "ms", "version", "fallback", "evidence")} for st in trace],
+        "decision": state.get("decision"),
+        "safety_flags": state.get("safety_flags", []),
+        "sources": len(state.get("sources", [])),
+        "total_ms": sum(st.get("ms", 0) for st in trace),
+        "llm_down_simulated": bool(state.get("llm_down")),
+    }
+
+
+@traced(Agent.AUDIT)
+def audit(state: SessionState):
+    rec = audit_record(state)
+    try:
+        AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with AUDIT_LOG.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False, default=str) + "\n")
+        where = "đã ghi"
+    except OSError as e:  # auditing must never break the answer
+        where = f"không ghi được ({type(e).__name__})"
+    fallbacks = sum(st["status"] == "fallback" for st in rec["steps"])
+    summary = f"Nhật ký {where}: {len(rec['steps'])} bước, {fallbacks} dự phòng, {rec['total_ms']} ms"
+    return {}, summary, [call("write_audit", {"request_id": rec["request_id"]}, {"steps": len(rec["steps"])})]

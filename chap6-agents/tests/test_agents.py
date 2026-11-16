@@ -148,7 +148,7 @@ def run(g, msg, tid="t"):
 
 def test_graph_knowledge_turn(offline):
     out = run(offline, "HbA1c là gì")
-    assert [s["agent"] for s in out["trace"]] == ["safety_in", "orchestrator", "knowledge", "safety_out"]
+    assert [s["agent"] for s in out["trace"]] == ["safety_in", "orchestrator", "knowledge", "safety_out", "audit"]
     assert out["sections"][0]["text"] == "Khát nhiều [[cite:S1]]."
 
 
@@ -158,15 +158,15 @@ def test_graph_multi_turn_intake_then_risk(offline):
     assert set(first["missing"]) == {"HighChol", "PhysActivity", "GenHlth"}
     second = run(offline, "mỡ máu không, ít vận động, sức khỏe trung bình")
     agents = [s["agent"] for s in second["trace"]]
-    assert agents == ["safety_in", "orchestrator", "intake", "risk", "advisor", "safety_out"]
+    assert agents == ["safety_in", "orchestrator", "intake", "risk", "rules", "advisor", "safety_out", "audit"]
     kinds = [s["kind"] for s in second["sections"]]
-    assert kinds == ["risk", "advice", "notice"]
-    advice = second["sections"][1]["text"]
+    assert kinds == ["risk", "rules", "advice", "notice"]
+    advice = second["sections"][2]["text"]
     assert "500 mg" not in advice and "[[cite:S1]]" in advice
     assert "dosage_removed" in second["safety_flags"]
 
 
 def test_graph_emergency_short_circuits(offline):
     out = run(offline, "Tôi thấy lú lẫn, vã mồ hôi sau khi tiêm insulin")
-    assert [s["agent"] for s in out["trace"]] == ["safety_in", "safety_out"]
+    assert [s["agent"] for s in out["trace"]] == ["safety_in", "safety_out", "audit"]
     assert out["sections"][0]["kind"] == "emergency"
